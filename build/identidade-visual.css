@@ -32,7 +32,7 @@
   --ink:#F3EDE0;               /* texto principal (marfim) */
   --muted:#A89F8C;
   --accent-blue:#C9A55C;       /* ACCENT = dourado da marca (nome da var herdado do motor) */
-  --accent-blue-light:#221C10; --accent-soft:rgba(201,165,92,.16); --on-accent:#17120A;
+  --accent-blue-light:#221C10; --range-bg:rgba(201,165,92,.38); --range-ink:#FFF4D9; --accent-soft:rgba(201,165,92,.16); --on-accent:#17120A;
   --selected:#3A2F18;
   --good:#3FB68B; --bad:#E5534B; --red:#E5534B; --yellow:#E8B04A; --aqua:#5BB5C9; --black:#000000;
   --grid:#2F2A21; --thead:#25211A; --tfoot:#211D16;

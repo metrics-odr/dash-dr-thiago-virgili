@@ -41,7 +41,7 @@
   /* ---------- Seletor de período (estilo Data Studio) ---------- */
   .period-picker{position:relative}
   .period-btn{gap:9px}
-  .period-btn .period-ic{font-size:14px; line-height:1}
+  .period-btn .period-ic{display:inline-flex; color:var(--accent-blue)} .period-btn .period-ic svg{width:15px; height:15px}
   .period-btn .period-label{font-variant-numeric:tabular-nums}
   .period-btn .period-caret{color:var(--muted); font-size:10px}
   .period-pop{position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:600px; max-width:94vw;
@@ -66,7 +66,7 @@
   .pp-day{aspect-ratio:1/1; border:1px solid transparent; background:transparent; color:var(--ink); border-radius:50%; cursor:pointer; font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; padding:0}
   .pp-day:hover:not(.empty){border-color:var(--accent-blue)}
   .pp-day.empty{cursor:default}
-  .pp-day.in{background:var(--accent-blue-light); border-radius:0}
+  .pp-day.in{background:var(--range-bg,var(--accent-blue-light)); border-radius:0; color:var(--range-ink,var(--ink)); font-weight:600}
   .pp-day.sel{background:var(--accent-blue); color:var(--on-accent); border-radius:50%; font-weight:600}
   .pp-day.in.edge-l{border-top-left-radius:50%; border-bottom-left-radius:50%}
   .pp-day.in.edge-r{border-top-right-radius:50%; border-bottom-right-radius:50%}
