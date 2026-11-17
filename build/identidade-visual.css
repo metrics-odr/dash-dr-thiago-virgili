@@ -25,17 +25,17 @@
 
 /* ------------------------------ TEMA ESCURO (padrão) ------------------------ */
 :root[data-theme="dark"]{
-  --text-primary:#070605;      /* sidebar */
-  --bg:#0B0A09;                /* fundo principal (preto da marca) */
-  --surface:#15130F;           /* cards */
-  --border:#2C261B;
+  --text-primary:#000000;      /* sidebar */
+  --bg:#000000;                /* fundo principal (preto da marca) */
+  --surface:#1B1915;           /* cards */
+  --border:#4B4335;
   --ink:#F3EDE0;               /* texto principal (marfim) */
   --muted:#A89F8C;
   --accent-blue:#C9A55C;       /* ACCENT = dourado da marca (nome da var herdado do motor) */
   --accent-blue-light:#221C10; --accent-soft:rgba(201,165,92,.16); --on-accent:#17120A;
   --selected:#3A2F18;
-  --good:#3FB68B; --bad:#E5534B; --red:#E5534B; --yellow:#E8B04A; --aqua:#5BB5C9; --black:#0B0A09;
-  --grid:#26211A; --thead:#1D1913; --tfoot:#1A160F;
+  --good:#3FB68B; --bad:#E5534B; --red:#E5534B; --yellow:#E8B04A; --aqua:#5BB5C9; --black:#000000;
+  --grid:#2F2A21; --thead:#25211A; --tfoot:#211D16;
   --cc1:#C9A55C; --cc2:#3FB68B; --cc3:#E5534B; --cc4:#F0D58E; --cc5:#8D7BC9;
   --cc6:#5BB5C9; --cc7:#D98A5B; --cc8:#9BBF5A; --cc9:#B07A3C; --cc10:#7F8FD1;
   --chart-leads:#C9A55C; --chart-mqls:#5BB5C9; --chart-gasto:#E5534B;
