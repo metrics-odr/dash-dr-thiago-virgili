@@ -984,8 +984,8 @@ function renderAgenda(){
   renderTable({id:'tAgenda', center:true,
     cols:[{key:'agd',label:'Agendado em',type:'date'},{key:'nm',label:'Nome',type:'dim',big:true},
       {key:'ph',label:'Telefone',type:'dim',w:110},
-      {key:'org',label:'Origem',type:'dim',w:130},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
-    rows:fL.map((l,i)=>({k:'a'+i, cells:{agd:l.agd||l.d,nm:l.nm,ph:l.ph,org:l.o?'Tráfego Pago':'Não identificado',
+      {key:'org',label:'Origem',type:'html',w:140},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
+    rows:fL.map((l,i)=>({k:'a'+i, cells:{agd:l.agd||l.d,nm:l.nm,ph:l.ph,org:l.o?'<span class="tag-origem tag-pago">Tráfego Pago</span>':'Não identificado',
       lk:l.lk?`<a class="crm-link" href="${escA(l.lk)}" target="_blank" rel="noopener noreferrer">Abrir no CRM ↗</a>`:'—'}}))});
 }
 
