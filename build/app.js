@@ -980,10 +980,10 @@ function renderAgenda(){
   const fL=leadsActive().filter(l=>l.q).sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:0));
   document.getElementById('agCount').textContent=fL.length+' agendamentos · '+fL.filter(l=>l.o).length+' do tráfego pago';
   renderTable({id:'tAgenda', center:true,
-    cols:[{key:'d',label:'Data',type:'date'},{key:'agd',label:'Agendado em',type:'date'},{key:'nm',label:'Nome',type:'dim',big:true},
-      {key:'ph',label:'Telefone',type:'dim',w:110},{key:'bucket',label:'Etapa no CRM',type:'dim',big:true},
+    cols:[{key:'agd',label:'Agendado em',type:'date'},{key:'nm',label:'Nome',type:'dim',big:true},
+      {key:'ph',label:'Telefone',type:'dim',w:110},
       {key:'org',label:'Origem',type:'dim',w:130},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
-    rows:fL.map((l,i)=>({k:'a'+i, cells:{d:l.d,agd:l.agd||null,nm:l.nm,ph:l.ph,bucket:l.bucket,org:l.o?'Tráfego Pago':'Não identificado',
+    rows:fL.map((l,i)=>({k:'a'+i, cells:{agd:l.agd||l.d,nm:l.nm,ph:l.ph,org:l.o?'Tráfego Pago':'Não identificado',
       lk:l.lk?`<a class="crm-link" href="${escA(l.lk)}" target="_blank" rel="noopener noreferrer">Abrir no CRM ↗</a>`:'—'}}))});
 }
 
