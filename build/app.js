@@ -864,7 +864,7 @@ const DAILY_COLS=[
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
   {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
-const META_DAILY_COLS=DAILY_COLS.filter(c=>!['vendas','cac','fat','roas','prop'].includes(c.key));   // tabela estreita: sem vendas/consultas/proporção
+const META_DAILY_COLS=DAILY_COLS;   // mesma tabela diária da Visão Geral
 function dailyCells(x,d,isTotal){
   const s=salesOf(x);
   return {date:isTotal?null:x.d, wd:isTotal?'':weekday(x.d), gasto:d.gasto, cpm:d.cpm, ctr:d.ctr, cl:x.cl,
