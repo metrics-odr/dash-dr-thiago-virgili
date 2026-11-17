@@ -305,7 +305,7 @@ function toggleSet(set,key,ctrl,others){
 /* ---------------- funil ---------------- */
 function funnelHTML(steps){ return steps.map(s=>`
     <div class="step ${s[3]?'na':''} ${s[4]||''}"><div class="step-main"><div class="m-label">${s[0]}</div><div class="m-val">${s[1]}</div></div>
-    <div class="secs">${s[2].map(x=>`<div><span class="s-label">${x[0]}</span><span class="s-val">${x[1]}</span></div>`).join('')}</div></div>`).join(''); }
+    <div class="secs">${s[2].map(x=>x?`<div><span class="s-label">${x[0]}</span><span class="s-val">${x[1]}</span></div>`:'<div></div>').join('')}</div></div>`).join(''); }
 
 /* ---------------- charts ---------------- */
 const charts={};
@@ -506,10 +506,10 @@ function funnelSteps(t,dv,crm){
   const s=salesOf(t), g=dv.gasto;
   return [
     ['Gasto Total', brl(g), [], false, 'hl-gasto'],
-    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
+    ['Impressões', intf(t.im), [null,['CPM',brl(dv.cpm)]]],
     ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
-    ['Conversas Totais', intf(t.msgs), [['CPL-T',brl(dv.cplt)],['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)]]],
-    ['Novas Conversas', crm?intf(t.leads):NA, [['CPL-N',crm?brl(dv.cpl):NA],['Novas/Totais',crm?pct(dv.prop):NA]], !crm],
+    ['Conversas Totais', intf(t.msgs), [['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)],['CPL-T',brl(dv.cplt)]]],
+    ['Novas Conversas', crm?intf(t.leads):NA, [['Novas/Totais',crm?pct(dv.prop):NA],['CPL-N',crm?brl(dv.cpl):NA]], !crm],
     ['Agendamentos', crm?intf(t.mqls):NA, [['Tx‑Agend.',crm?pct(dv.tx):NA],['CPA',crm?brl(dv.cpmql):NA]], !crm, 'hl-mql'],
     ['Vendas', crm&&s.vendas!=null?intf(s.vendas):NA, [['Agend→Venda',crm&&s.vendas!=null&&t.mqls?pct(s.vendas/t.mqls):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
     ['Faturamento', crm&&s.fat!=null?brl(s.fat):NA, [['ROAS',crm&&s.roas!=null?numf(s.roas):NA],['Ticket',crm&&s.tm!=null?brl(s.tm):NA]], !crm||s.fat==null, 'hl-fat'],
