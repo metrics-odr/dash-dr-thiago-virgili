@@ -274,6 +274,7 @@ def unify_names(meta, leads, sales, ad_links):
             ad_links.update(fixed)
 
 
+KOMMO_LEAD_URL = "https://contourculptclinique.kommo.com/leads/detail/"   # abre o lead no CRM (auditoria)
 WEEKDAYS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
 _RE_PHONE = re.compile(r"^\+?\d{10,13}$")
 
@@ -387,9 +388,9 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
         ag = (ag_by_entity.get(kid) if kid else None) or (ag_by_phone.get(phone) if phone else None)
         if ag:
             ag["used"] = True
-        agendado = bool(ag) or norm(r["agendado"]) == "sim"
         status = r["status"] or "Sem status"
-        status = re.sub(r"^\d+\s*\.\s*", lambda m: m.group(0), status)
+        consulta = 1 if re.search(r"consulta", status, re.I) else 0      # etapa "Consulta" do funil
+        agendado = bool(ag) or norm(r["agendado"]) == "sim" or bool(consulta)   # quem fez consulta tambem agendou
         dt = datetime.strptime(d, "%Y-%m-%d")
         leads.append({
             "d": d,
@@ -399,6 +400,9 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             "prof": WEEKDAYS[dt.weekday()],      # dia da semana da conversa
             "bucket": status,                    # etapa do funil no Kommo
             "q": 1 if agendado else 0,           # q = AGENDAMENTO (coluna "MQL" do motor)
+            "c": consulta,                       # 1 = chegou na etapa Consulta
+            "lk": r["link"] if r["link"].startswith("http") else (KOMMO_LEAD_URL + kid if kid else ""),
+            "agd": ag["d"] if ag else "",        # data registrada na aba Agendamentos
             "utm": 0,
             "nm": first_last_initial(clean_name(r["name"])),
             "em": "—",
@@ -414,7 +418,8 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             "d": a["d"], "src": "org", "plat": "Agendado",
             "camp": "(sem campanha)", "adset": "(sem conjunto)", "ad": "(sem anúncio)",
             "prof": WEEKDAYS[datetime.strptime(a["d"], "%Y-%m-%d").weekday()],
-            "bucket": "Agendado (sem conversa no CRM)", "q": 1, "utm": 0,
+            "bucket": "Agendado (sem conversa no CRM)", "q": 1, "c": 0, "utm": 0,
+            "lk": (KOMMO_LEAD_URL + a["entity"]) if a["entity"] else "", "agd": a["d"],
             "nm": first_last_initial(clean_name(a["name"])) if a["name"] else "—",
             "em": "—", "ph": mask_phone(a["phone"]),
         })

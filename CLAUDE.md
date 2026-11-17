@@ -42,19 +42,21 @@ Linhas "deslocadas" (células vazias omitidas) são lidas ancoradas na direita (
 
 ## Mapeamento no motor (importante)
 
-- `leads[]` = **Conversas Iniciadas** (CRM). `q` = **Agendamento** → no JS as chaves
-  `mqls`/`cpmql`/`tx`/`convmql` significam Agendamentos / **CPA** / Tx‑Agend. / ConvAgend
-  (rótulos da UI já trocados). Não renomear as chaves (acoplamento com o motor).
-- Agendamento = id Kommo (final de "Abrir Conversa") OU telefone canônico ∈ aba Agendamentos,
-  OU coluna Agendado = SIM. Agendamentos sem conversa viram lead extra (`bucket` "Agendado (sem conversa no CRM)").
-- **Atribuição:** o CRM não traz campanha/anúncio. Leads por campanha/conjunto/anúncio
-  = `ml` (*Messaging Conversations Started* do Meta) via `buildAgg`; nos totais/diária da
-  página Meta Ads, `paidMode()` soma `ml`. Visão Geral/Relatório usam as conversas do CRM.
-  Agendamentos ficam em "(sem campanha)" (sem quebra por anúncio) — sugerir ao cliente
-  capturar UTM/`ctwa_clid` no Kommo para atribuir.
-- Vendas/Faturamento/ROAS/CAC = "-" até a aba de Vendas existir.
-- Sem Page Views/ConvLP/Checkouts (campanhas de mensagem) — colunas removidas.
-- Imposto Meta: `TAX_FACTOR = 1.13806` em `build.py` (herdado do template — **confirmar** com o cliente).
+- **Funil:** Impressão > Clique > Mensagem > Agendamento > Consulta > Venda.
+- **Conversas Totais** = *Messaging Conversations Started* (aba Meta Ads) → CPL-T.
+  **Novas Conversas** = aba Conversas Iniciadas (CRM, `leads[]`) → CPL-N.
+  **Proporção** = Novas ÷ Totais (pode passar de 100% se o CRM registrar mais que o Meta).
+  (Interpretação assumida: "totais" = Meta, "novas" = contatos novos no CRM.)
+- `leads[].q` = **Agendamento** (JS: chaves `mqls`/`cpmql`/`tx` = Agendamentos/CPA/Tx‑Agend.; não renomear).
+  Agendamento = id Kommo (final de "Abrir Conversa") OU telefone ∈ aba Agendamentos, OU Agendado = SIM, OU etapa Consulta.
+  Agendamentos sem conversa viram lead extra (`bucket` "Agendado (sem conversa no CRM)", link montado por `KOMMO_LEAD_URL`+entity_id).
+- `leads[].c` = **Consulta** (Status do CRM contém "consulta", ex. "4. Consulta Paga") → JS `reunioes`.
+- **Página Captura Meta Ads e tabelas Campanha/Conjunto/Anúncio = 100% aba Meta Ads**, sem cruzar
+  (`metaScope` zera `fL`/`fS`; Conversas = `ml`; só Gasto, CPM, CTR, Cliques, Conversas, CPL; gráficos só CPL).
+- **Página Agendamentos** (`renderAgenda`): lista cada agendamento com link **Abrir conversa** (`leads[].lk`) para auditoria no CRM.
+- Vendas/Faturamento/ROAS/CAC = "-" até a aba de Vendas existir (`GID_SALES`).
+- Sem Page Views/ConvLP/Checkouts (campanhas de mensagem).
+- Imposto Meta: `TAX_FACTOR = 1.13806` (herdado do template — **confirmar** com o cliente).
 
 ## Arquitetura / arquivos
 

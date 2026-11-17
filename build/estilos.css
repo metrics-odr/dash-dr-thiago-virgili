@@ -394,3 +394,5 @@
   .ptitle,.sec-title,.rel-title{font-family:'Lora',Georgia,serif; font-weight:500; letter-spacing:.01em}
   .btn.primary{background:linear-gradient(180deg,#C9A869,#B08A4A); border-color:#B08A4A; font-weight:600}
   :root:not([data-theme="dark"]) .sidebar{background:#14110C}
+  .crm-link{color:var(--accent-blue); font-weight:600; text-decoration:none; border:1px solid var(--accent-blue); border-radius:6px; padding:2px 9px; white-space:nowrap}
+  .crm-link:hover{background:var(--accent-blue); color:var(--on-accent)}

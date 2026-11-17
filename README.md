@@ -24,14 +24,13 @@ falha com a mensagem `a planilha esta PRIVADA`.
 
 ## Funil e regras
 
-`Impressões → Cliques → Conversas Iniciadas → Agendamentos → Vendas → Faturamento`
+`Impressão > Clique > Mensagem > Agendamento > Consulta > Venda`
 
-- **Agendamento** = lead cujo id do Kommo (final do link "Abrir Conversa") ou telefone
-  consta em *Agendamentos*, ou com coluna *Agendado* = SIM. Agendamentos sem conversa
-  correspondente entram como conversa extra (o funil nunca tem mais agendamentos que conversas).
-- **Leads por anúncio:** o CRM não informa campanha/anúncio; nas tabelas por
-  campanha/conjunto/anúncio (aba *Captura Meta Ads*) "Conversas" = *Messaging Conversations
-  Started* do Meta Ads. Agendamentos não têm quebra por anúncio.
+- **Conversas Totais** (Meta, CPL-T) · **Novas Conversas** (CRM, CPL-N) · **Proporção Novas/Totais**.
+- **Agendamento** = lead cujo id do Kommo ou telefone está em *Agendamentos*, ou Agendado = SIM, ou etapa Consulta.
+- **Consulta** = etapa do CRM contendo "consulta". **Venda** = futura aba de Vendas.
+- **Captura Meta Ads** (campanha/conjunto/anúncio): 100% aba Meta Ads, sem cruzar com o CRM.
+- **Aba Agendamentos:** lista os agendamentos com link *Abrir conversa* (abre o lead no Kommo para auditoria).
 - Telefone mascarado (página pública). Imposto Meta (`TAX_FACTOR`) ativo por padrão.
 
 ## Arquitetura

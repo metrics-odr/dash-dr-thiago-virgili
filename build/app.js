@@ -30,7 +30,7 @@ const STATE = {
   selDays:new Set(),
   mSelC:new Set(), mSelA:new Set(), mSelAd:new Set(),
   mSearchC:'', mSearchA:'', mSearchD:'',
-  chMetric:{camp:'cpmql', adset:'cpmql', ad:'cpmql'},
+  chMetric:{camp:'cpl', adset:'cpl', ad:'cpl'},
   sort:{}, colw: JSON.parse(localStorage.getItem('dt_colw2')||'{}'),
 };
 const taxf = ()=> STATE.tax ? TAX : 1;
@@ -57,6 +57,7 @@ function derive(a){
     cpm:a.im?g/a.im*1000:null, ctr:a.im?a.cl/a.im:null, cpc:a.cl?g/a.cl:null,
     cr:a.cl?pv/a.cl:null, cpv:pv?g/pv:null,
     convlp:pv?a.leads/pv:null, vischk:pv?chk/pv:null,
+    msgs:a.msgs||0, cplt:a.msgs?g/a.msgs:null, prop:a.msgs?a.leads/a.msgs:null,
     cpl:a.leads?g/a.leads:null, cpmql:a.mqls?g/a.mqls:null, tx:a.leads?a.mqls/a.leads:null};
 }
 /* --------- FUNIL: MQL → Venda (Vendas/Faturamento já ligados via build.py) ---------
@@ -70,7 +71,7 @@ function derive(a){
 function salesOf(a){
   const g=(a?a.sp:0)*taxf();
   const mqls=(a&&a.mqls)||0;
-  const agendamentos=(a&&a.agendamentos)||0, reunioes=(a&&a.reunioes)||0;
+  const agendamentos=(a&&a.mqls)||0, reunioes=(a&&a.reunioes)||0;   // agendamentos = q do CRM; reunioes = CONSULTAS
   const vendas=(a&&a.vendas)||0, fat=(a&&a.fat)||0, receita=(a&&a.receita)||0;
   const hasAg=agendamentos>0, hasRe=reunioes>0, hasVd=vendas>0||fat>0;
   return {
@@ -101,27 +102,27 @@ function salesOf(a){
 const isNoAttrib=k=>/^\(sem (campanha|conjunto|anúncio)\)$/.test(k||'');
 function buildAgg(fL,fM,fS,dim){
   const m={};
-  const get=k=>m[k]||(m[k]={sp:0,im:0,cl:0,pv:0,chk:0,leads:0,mqls:0,vendas:0,fat:0,receita:0});
+  const get=k=>m[k]||(m[k]={sp:0,im:0,cl:0,pv:0,chk:0,leads:0,msgs:0,reunioes:0,mqls:0,vendas:0,fat:0,receita:0});
   /* Leads por campanha/conjunto/anúncio = conversas iniciadas reportadas pelo Meta (r.ml):
      a aba Conversas do CRM não traz campanha/anúncio. As conversas do CRM ficam em
      "(sem campanha)" (oculto nas tabelas por dimensão, mas presente nos totais da Geral). */
-  fM.forEach(r=>{const a=get(r[dim]); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.leads+=r.ml||0;});
-  fL.forEach(r=>{const a=get(r[dim]); a.leads+=1; a.mqls+=r.q;});
+  fM.forEach(r=>{const a=get(r[dim]); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.leads+=r.ml||0; a.msgs+=r.ml||0;});
+  fL.forEach(r=>{const a=get(r[dim]); a.leads+=1; a.mqls+=r.q; a.reunioes+=r.c||0;});
   fS.forEach(r=>{const a=get(r[dim]); a.vendas+=r.vendas||0; a.fat+=r.fat||0; a.receita+=r.receita||0;});
   return m;
 }
 function totals(fL,fM,fS){
   let sp=0,im=0,cl=0,pv=0,chk=0,ml=0; fM.forEach(r=>{sp+=r.sp;im+=r.im;cl+=r.cl;pv+=r.pv;chk+=r.ck||0;ml+=r.ml||0;});
-  return {sp, im, cl, pv, chk, leads:fL.length+(paidMode()?ml:0), mqls:fL.reduce((s,r)=>s+r.q,0),
+  return {sp, im, cl, pv, chk, msgs:ml, leads:fL.length+(paidMode()?ml:0), reunioes:fL.reduce((s,r)=>s+(r.c||0),0), mqls:fL.reduce((s,r)=>s+r.q,0),
     vendas:fS.reduce((s,r)=>s+(r.vendas||0),0), fat:fS.reduce((s,r)=>s+(r.fat||0),0),
     receita:fS.reduce((s,r)=>s+(r.receita||0),0)};
 }
 /* daily aggregation for a source pair. `d` (data da venda) é a data REAL da
    compra (aba Compradores), não a data da conversa — ver build.py::process. */
 function daily(fL,fM,fS){
-  const days={}; const g=d=>days[d]||(days[d]={d, sp:0,im:0,cl:0,pv:0,chk:0,leads:0,mqls:0,vendas:0,fat:0,receita:0});
-  fM.forEach(r=>{if(!r.d)return; const a=g(r.d); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; if(paidMode()) a.leads+=r.ml||0;});
-  fL.forEach(r=>{if(!r.d)return; const a=g(r.d); a.leads+=1; a.mqls+=r.q;});
+  const days={}; const g=d=>days[d]||(days[d]={d, sp:0,im:0,cl:0,pv:0,chk:0,leads:0,msgs:0,reunioes:0,mqls:0,vendas:0,fat:0,receita:0});
+  fM.forEach(r=>{if(!r.d)return; const a=g(r.d); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.msgs+=r.ml||0; if(paidMode()) a.leads+=r.ml||0;});
+  fL.forEach(r=>{if(!r.d)return; const a=g(r.d); a.leads+=1; a.mqls+=r.q; a.reunioes+=r.c||0;});
   fS.forEach(r=>{if(!r.d)return; const a=g(r.d); a.vendas+=r.vendas||0; a.fat+=r.fat||0; a.receita+=r.receita||0;});
   return Object.values(days).sort((a,b)=>a.d<b.d?-1:1);
 }
@@ -315,23 +316,33 @@ const CHART_SERIES=['--cc1','--cc2','--cc3','--cc4','--cc5','--cc6','--cc7','--c
 const chartPalette=()=>CHART_SERIES.map(v=>cvar(v)||'#888888');
 const cmuted=()=>cvar('--muted')||'#6B7280', cink=()=>cvar('--ink')||'#1A1D2E', cgrid=()=>cvar('--grid')||'#EEF0F5';
 function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
-function comboChart(id, d){
+function comboChart(id, d, metaOnly){
   destroy(id); const el=document.getElementById(id); if(!el) return;
   const labels=d.map(x=>x.d.slice(5)), mut=cmuted(), gr=cgrid();
   const cLeads=cvar('--chart-leads'), cMqls=cvar('--chart-mqls'), cGasto=cvar('--chart-gasto'), cCpl=cvar('--chart-cpl')||cink(), cCpmql=cvar('--chart-cpmql');
+  const bar=(label,data,col)=>({type:'bar',label,data,backgroundColor:col,yAxisID:'y',borderRadius:3,order:3});
+  const line=(label,data,col,ord)=>({type:'line',label,data,borderColor:col,backgroundColor:col,yAxisID:'y1',borderWidth:2,pointRadius:2,spanGaps:true,tension:.25,order:ord});
+  const g=x=>x.sp*taxf();
+  const ds=metaOnly?[
+    bar('Conversas (Meta)',d.map(x=>x.leads),cLeads),
+    line('Gasto',d.map(x=>+g(x).toFixed(2)),cGasto,1),
+    line('CPL',d.map(x=>x.leads?+(g(x)/x.leads).toFixed(2):null),cCpl,0),
+  ]:[
+    bar('Conversas Totais',d.map(x=>x.msgs),'#8D7B52'),
+    bar('Novas Conversas',d.map(x=>x.leads),cLeads),
+    bar('Agendamentos',d.map(x=>x.mqls),cMqls),
+    line('Gasto',d.map(x=>+g(x).toFixed(2)),cGasto,1),
+    line('CPL-T',d.map(x=>x.msgs?+(g(x)/x.msgs).toFixed(2):null),cCpl,0),
+    line('CPL-N',d.map(x=>x.leads?+(g(x)/x.leads).toFixed(2):null),'#F0D58E',0),
+    line('CPA',d.map(x=>x.mqls?+(g(x)/x.mqls).toFixed(2):null),cCpmql,0),
+  ];
   charts[id]=new Chart(el,{
-    data:{labels, datasets:[
-      {type:'bar',label:'Conversas',data:d.map(x=>x.leads),backgroundColor:cLeads,yAxisID:'y',borderRadius:3,order:3},
-      {type:'bar',label:'Agend.',data:d.map(x=>x.mqls),backgroundColor:cMqls,yAxisID:'y',borderRadius:3,order:3},
-      {type:'line',label:'Gasto',data:d.map(x=>+(x.sp*taxf()).toFixed(2)),borderColor:cGasto,backgroundColor:cGasto,yAxisID:'y1',borderWidth:2,pointRadius:2,tension:.25,order:1},
-      {type:'line',label:'CPL',data:d.map(x=>x.leads?+((x.sp*taxf())/x.leads).toFixed(2):null),borderColor:cCpl,backgroundColor:cCpl,yAxisID:'y1',borderWidth:2,pointRadius:2,spanGaps:true,tension:.25,order:0},
-      {type:'line',label:'CPA',data:d.map(x=>x.mqls?+((x.sp*taxf())/x.mqls).toFixed(2):null),borderColor:cCpmql,backgroundColor:cCpmql,yAxisID:'y1',borderWidth:2,pointRadius:2,spanGaps:true,tension:.25,order:0},
-    ]},
+    data:{labels, datasets:ds},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{color:cink(),boxWidth:10,usePointStyle:true,font:{size:11}}},
         tooltip:{callbacks:{label:c=>{const v=c.raw; return c.dataset.label+': '+(c.dataset.yAxisID==='y1'?brl(v):intf(v));}}}},
       scales:{x:{ticks:{color:mut,font:{size:10}},grid:{display:false}},
-        y:{position:'left',ticks:{color:mut,font:{size:10}},grid:{color:gr},beginAtZero:true,title:{display:true,text:'Conversas / Agend.',color:mut,font:{size:10}}},
+        y:{position:'left',ticks:{color:mut,font:{size:10}},grid:{color:gr},beginAtZero:true,title:{display:true,text:'Qtd.',color:mut,font:{size:10}}},
         y1:{position:'right',ticks:{color:mut,font:{size:10}},grid:{display:false},beginAtZero:true,title:{display:true,text:'R$',color:mut,font:{size:10}}}}}
   });
 }
@@ -409,9 +420,7 @@ function donutQlf(id, mqls, leads){
    (spDay/leadDay/mqlDay/vendaDay) formam a razão; `agg` lê o valor já pronto
    (derive/salesOf) pro card da legenda e pro título do painel. */
 const CHART_METRICS = {
-  cpmql:{label:'CPA', title:'Custo por MQL', unit:'MQL', den:'mqlDay', aggVal:a=>derive(a).cpmql},
-  cpl:  {label:'CPL',   title:'Custo por Lead (CPL)', unit:'Lead', den:'leadDay', aggVal:a=>derive(a).cpl},
-  cac:  {label:'CAC',   title:'Custo de Aquisição (CAC)', unit:'Venda', den:'vendaDay', aggVal:a=>salesOf(a).cac},
+  cpl:  {label:'CPL',   title:'CPL (custo por conversa)', unit:'conversa', den:'leadDay', aggVal:a=>derive(a).cpl},
 };
 
 /* Mar03/Mar10: custo (CPA/CPL/CAC) por dimensão (campanha/conjunto/anúncio) por
@@ -426,14 +435,14 @@ function mqlByDimChart(id, fL, fM, fS, agg, dim, selSet){
   destroy(id); const el=document.getElementById(id); const legEl=document.getElementById(id+'Legend');
   const titleEl=document.getElementById(id+'Title');
   if(!el) return;
-  const metricKey=STATE.chMetric[dim]||'cpmql', M=CHART_METRICS[metricKey];
+  const metricKey='cpl', M=CHART_METRICS[metricKey];
   const dimLabel={'camp':'campanha','adset':'conjunto','ad':'anúncio'}[dim]||dim;
   if(titleEl) titleEl.textContent=`${M.title}, por ${dimLabel}, por dia · clique numa linha ou na legenda para filtrar`;
-  const days=[...new Set([...fL,...fM].filter(r=>r.d).map(r=>r.d))].sort();
+  const days=[...new Set(fM.filter(r=>r.d).map(r=>r.d))].sort();
   // ordena por CPA (melhor primeiro; sem MQL/gasto fica no fim) — ordem estável p/ cor e legenda,
   // independente da métrica ativa no toggle (evita reordenar/recolorir ao trocar de métrica)
-  const members=[...new Set(fL.map(r=>r[dim]))].filter(k=>!isNoAttrib(k)).sort((a,b)=>{
-    const ca=agg[a]?derive(agg[a]).cpmql:null, cb=agg[b]?derive(agg[b]).cpmql:null;
+  const members=[...new Set(fM.map(r=>r[dim]))].filter(k=>!isNoAttrib(k)).sort((a,b)=>{
+    const ca=agg[a]?derive(agg[a]).cpl:null, cb=agg[b]?derive(agg[b]).cpl:null;
     if(ca==null&&cb==null) return 0; if(ca==null) return 1; if(cb==null) return -1; return ca-cb;
   });
   const pal=chartPalette(), mut=cmuted();
@@ -447,7 +456,7 @@ function mqlByDimChart(id, fL, fM, fS, agg, dim, selSet){
     const spDay={}, leadDay={}, mqlDay={}, vendaDay={};
     days.forEach(d=>{spDay[d]=0; leadDay[d]=0; mqlDay[d]=0; vendaDay[d]=0;});
     fM.forEach(r=>{ if(r[dim]===mv && r.d!=null && spDay[r.d]!=null) spDay[r.d]+=r.sp; });
-    fL.forEach(r=>{ if(r[dim]===mv && r.d!=null && leadDay[r.d]!=null){ leadDay[r.d]+=1; mqlDay[r.d]+=r.q; } });
+    fM.forEach(r=>{ if(r[dim]===mv && r.d!=null && leadDay[r.d]!=null) leadDay[r.d]+=r.ml||0; });
     fS.forEach(r=>{ if(r[dim]===mv && r.d!=null && vendaDay[r.d]!=null) vendaDay[r.d]+=r.vendas||0; });
     const denDay={leadDay,mqlDay,vendaDay}[M.den];
     const data=days.map(d=> denDay[d]>0 ? +((spDay[d]*taxf())/denDay[d]).toFixed(2) : null);
@@ -510,10 +519,11 @@ function renderGeralCore(ids){
     ['Gasto Total', brl(g), [], false, 'hl-gasto'],
     ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
     ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
-    ['Conversas Iniciadas', intf(t.leads), [['CPL',brl(dv.cpl)]]],
+    ['Conversas Totais (Mensagem)', intf(t.msgs), [['CPL-T',brl(dv.cplt)],['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)]]],
+    ['Novas Conversas', intf(t.leads), [['CPL-N',brl(dv.cpl)],['Novas/Totais',pct(dv.prop)]]],
     ['Agendamentos', intf(t.mqls), [['Tx‑Agend.',pct(dv.tx)],['CPA',brl(dv.cpmql)]], false, 'hl-mql'],
-    ['Vendas', s.vendas!=null?intf(s.vendas):NA, [['ConvAgend',s.convmql!=null?pct(s.convmql):NA],['CAC',s.cac!=null?brl(s.cac):NA]], s.vendas==null],
-    ['Receita', s.receita!=null?brl(s.receita):NA, [['ROAS',s.roasReceita!=null?numf(s.roasReceita):NA],['Ticket',s.tmReceita!=null?brl(s.tmReceita):NA]], s.receita==null, 'hl-fat'],
+    ['Consultas', s.reunioes!=null?intf(s.reunioes):NA, [['Agend→Consulta',s.txag!=null&&s.reunioes!=null?pct(s.reunioes/t.mqls):NA],['Custo/Consulta',s.cprr!=null?brl(s.cprr):NA]], s.reunioes==null],
+    ['Vendas', s.vendas!=null?intf(s.vendas):NA, [['Consulta→Venda',s.txvenda!=null?pct(s.txvenda):NA],['CAC',s.cac!=null?brl(s.cac):NA]], s.vendas==null],
     ['Faturamento', s.fat!=null?brl(s.fat):NA, [['ROAS',s.roas!=null?numf(s.roas):NA],['Ticket',s.tm!=null?brl(s.tm):NA]], s.fat==null, 'hl-fat'],
   ];
   document.getElementById(ids.funnel).innerHTML=funnelHTML(steps);
@@ -528,17 +538,16 @@ function renderGeralCore(ids){
     if(a.mqls>0){ const cq=(a.sp*taxf())/a.mqls; if(bestAd==null||cq<bestAd.v) bestAd={ad,v:cq}; }
   });
   const nCampAtivas=Object.values(buildAgg(fL,fM,fS,'camp')).filter(a=>a.sp>0).length;
-  const mlTot=fM.reduce((x,r)=>x+(r.ml||0),0);
   const adShort=s=>{ s=String(s||'—'); return s.length>22?s.slice(0,21)+'…':s; };
   const k2=[
-    {label:'Agendamentos por dia (média)',val:numf(t.mqls/nDays),aux:numf(t.leads/nDays)+' conversas/dia'},
+    {label:'Conversas Totais',val:intf(t.msgs),aux:'CPL-T '+brl(dv.cplt)},
+    {label:'Novas Conversas',val:intf(t.leads),aux:'CPL-N '+brl(dv.cpl)},
+    {label:'Proporção Novas/Totais',val:pct(dv.prop),aux:'novas ÷ totais'},
+    {label:'Agendamentos por dia (média)',val:numf(t.mqls/nDays),aux:numf(t.leads/nDays)+' novas conversas/dia'},
     {label:'CPC (link)',val:brl(dv.cpc),aux:intf(t.cl)+' cliques'},
-    {label:'Conversas iniciadas (Meta)',val:intf(mlTot),aux:'reportadas pelo Meta Ads'},
-    {label:'Custo por conversa (Meta)',val:mlTot?brl(g/mlTot):'-',aux:'Gasto / conversas Meta'},
     {label:'Anúncios ativos',val:intf(nAdsAtivos),aux:intf(nCampAtivas)+' campanhas c/ gasto'},
-    {label:'Conversas → Agendamento',val:pct(dv.tx),aux:'Tx de agendamento'},
-    {label:'Conversas Agendadas',val:intf(fL.filter(l=>l.q).length),aux:'marcadas como agendado no CRM'},
-    {label:'Conversas sem agendamento',val:intf(fL.filter(l=>!l.q).length),aux:'ainda em atendimento'},
+    {label:'Novas → Agendamento',val:pct(dv.tx),aux:'Tx de agendamento'},
+    {label:'Agendamentos → Consulta',val:pct(t.mqls?(t.reunioes||0)/t.mqls:null),aux:intf(t.reunioes||0)+' consultas'},
   ];
   document.getElementById(ids.kpis2).innerHTML=k2.map(kpiCard).join('');
   comboChart(ids.combo, daily(fL,fM,fS));
@@ -655,8 +664,7 @@ const AD_COLS=[
   {k:'ad',label:'Anúncio',dim:true,stk:'l1'},{k:'status',label:'Status',dim:true,stk:'l2'},
   {k:'camp',label:'Campanha',dim:true},{k:'adset',label:'Conjunto',dim:true},
   {k:'gasto',label:'Gasto'},{k:'im',label:'Impr.'},{k:'cpm',label:'CPM'},{k:'ctr',label:'CTR'},
-  {k:'leads',label:'Conversas'},{k:'cpl',label:'CPL'},{k:'mqls',label:'Agend.'},{k:'tx',label:'Tx‑Agend.'},{k:'cpmql',label:'CPA'},
-  {k:'convmql',label:'ConvAgend'},{k:'vendas',label:'Vendas'},{k:'cac',label:'CAC'},{k:'fat',label:'Faturamento'},{k:'roas',label:'ROAS'},
+  {k:'leads',label:'Conversas'},{k:'cpl',label:'CPL'},
   {k:'link',label:'Link',dim:true,stk:'r'},
 ];
 function adRowCells(ad,a,struct){
@@ -677,13 +685,6 @@ function relRenderAdTable(id,list){
     {key:'gasto',label:'Gasto',type:'brl'},{key:'im',label:'Impr.',type:'int'},
     {key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
     {key:'leads',label:'Conversas',type:'int'},{key:'cpl',label:'CPL',type:'brl'},
-    {key:'mqls',label:'Agend.',type:'int'},{key:'tx',label:'Tx‑Agend.',type:'pct'},
-    {key:'cpmql',label:'CPA',type:'brl'},
-    {key:'convmql',label:'ConvAgend',type:'pct'},
-    {key:'vendas',label:'Vendas',type:'int'},
-    {key:'cac',label:'CAC',type:'brl'},
-    {key:'fat',label:'Faturamento',type:'brl'},
-    {key:'roas',label:'ROAS',type:'num'},
     {key:'link',label:'Link',type:'html',w:90,stk:'r'},
   ];
   const rows=list.map(item=>{
@@ -855,19 +856,25 @@ function renderRelatorio(){
 /* colunas padrão das tabelas de heatmap por dia (ordem pedida) */
 const DAILY_COLS=[
   {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
-  {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},
-  {key:'ctr',label:'CTR',type:'pct'},
-  {key:'leads',label:'Conversas',type:'int'},{key:'cpl',label:'CPL',type:'brl',heat:'cpl',heatInv:true},
-  {key:'tx',label:'Tx‑Agend.',type:'pct'},{key:'mqls',label:'Agend.',type:'int'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
-  {key:'convmql',label:'ConvAgend',type:'pct'},{key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
-  {key:'fat',label:'Fat.',type:'brl'},{key:'receita',label:'Receita',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
+  {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
+  {key:'msgs',label:'Conv. Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
+  {key:'leads',label:'Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
+  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
+  {key:'reunioes',label:'Consultas',type:'int'},
+  {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
+  {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
+];
+const META_DAILY_COLS=[
+  {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
+  {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
+  {key:'cl',label:'Cliques',type:'int'},{key:'leads',label:'Conversas',type:'int',heat:'leads'},{key:'cpl',label:'CPL',type:'brl',heat:'cpl',heatInv:true},
 ];
 function dailyCells(x,d,isTotal){
   const s=salesOf(x);
-  return {date:isTotal?null:x.d, wd:isTotal?'':weekday(x.d), gasto:d.gasto, cpm:d.cpm, ctr:d.ctr, cr:d.cr, convlp:d.convlp,
-    chk:d.chk, vischk:d.vischk,
-    leads:x.leads, cpl:d.cpl, tx:d.tx, mqls:x.mqls, cpmql:d.cpmql,
-    convmql:s.convmql, vendas:s.vendas, cac:s.cac, fat:s.fat, receita:s.receita, roas:s.roas};
+  return {date:isTotal?null:x.d, wd:isTotal?'':weekday(x.d), gasto:d.gasto, cpm:d.cpm, ctr:d.ctr, cl:x.cl,
+    msgs:x.msgs, cplt:d.cplt, leads:x.leads, cpl:d.cpl, prop:d.prop,
+    mqls:x.mqls, cpmql:d.cpmql, reunioes:x.reunioes||0,
+    vendas:s.vendas, cac:s.cac, fat:s.fat, receita:s.receita, roas:s.roas};
 }
 
 /* campo de busca + botão "Limpar filtro" de cada tabela hierárquica (Campanha/
@@ -892,7 +899,7 @@ function updateTblToolsUI(){
 /* Mar04: considera TODOS os leads e TODO o gasto de todas as fontes de tráfego
    (sem filtrar por atribuição). Hoje só há Meta; quando vier google/tiktok/orgânico
    etc., já entram automaticamente. */
-function metaScope(ex){ let fL=leadsActive(), fM=metaActive(), fS=salesActive();
+function metaScope(ex){ let fL=[], fM=metaActive(), fS=[];   // 100% aba Meta Ads: sem cruzar com CRM/Vendas
   if(ex!=='C'&&STATE.mSelC.size){ fL=fL.filter(r=>STATE.mSelC.has(r.camp)); fM=fM.filter(r=>STATE.mSelC.has(r.camp)); fS=fS.filter(r=>STATE.mSelC.has(r.camp)); }
   if(ex!=='A'&&STATE.mSelA.size){ fL=fL.filter(r=>STATE.mSelA.has(r.adset)); fM=fM.filter(r=>STATE.mSelA.has(r.adset)); fS=fS.filter(r=>STATE.mSelA.has(r.adset)); }
   if(ex!=='D'&&STATE.mSelAd.size){ fL=fL.filter(r=>STATE.mSelAd.has(r.ad)); fM=fM.filter(r=>STATE.mSelAd.has(r.ad)); fS=fS.filter(r=>STATE.mSelAd.has(r.ad)); }
@@ -906,45 +913,31 @@ function selDim(dim,key,ctrl){
   renderMeta();
 }
 function renderMeta(){
-  const F=metaScope(null), fL=F.fL, fM=F.fM, fS=F.fS;   // KPIs, funil, graficos e tabela diaria
+  const F=metaScope(null), fL=F.fL, fM=F.fM, fS=F.fS;   // 100% aba Meta Ads
   const t=totals(fL,fM,fS), dv=derive(t), g=dv.gasto;
-  const NA='<span class="na-tag">sem dado</span>';
-  const s=salesOf(t);
   const steps=[
     ['Gasto Total', brl(g), [], false, 'hl-gasto'],
-    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)],['Frequência',NA]]],
+    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
     ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
-    ['Conversas Iniciadas', intf(t.leads), [['CPL',brl(dv.cpl)]]],
-    ['Agendamentos', intf(t.mqls), [['Tx‑Agend.',pct(dv.tx)],['CPA',brl(dv.cpmql)]], false, 'hl-mql'],
-    ['Vendas', s.vendas!=null?intf(s.vendas):NA, [['ConvAgend',s.convmql!=null?pct(s.convmql):NA],['CAC',s.cac!=null?brl(s.cac):NA]], s.vendas==null],
-    ['Receita', s.receita!=null?brl(s.receita):NA, [['ROAS',s.roasReceita!=null?numf(s.roasReceita):NA],['Ticket',s.tmReceita!=null?brl(s.tmReceita):NA]], s.receita==null, 'hl-fat'],
-    ['Faturamento', s.fat!=null?brl(s.fat):NA, [['ROAS',s.roas!=null?numf(s.roas):NA],['Ticket',s.tm!=null?brl(s.tm):NA]], s.fat==null, 'hl-fat'],
+    ['Mensagens (conversas iniciadas)', intf(t.leads), [['CPL',brl(dv.cpl)],['Msg/Clique',pct(t.cl?t.leads/t.cl:null)]], false, 'hl-mql'],
   ];
   document.getElementById('metaFunnel').innerHTML=funnelHTML(steps);
 
-  comboChart('mCombo', daily(fL,fM,fS));
-  // Mar02: barras de MQLs por anúncio (não leads)
-  const mqlByAd={}; fM.forEach(r=>{ if(!isNoAttrib(r.ad)) mqlByAd[r.ad]=(mqlByAd[r.ad]||0)+(r.ml||0); });
-  hbar('mMqlAd', Object.entries(mqlByAd).map(([label,leads])=>({label,leads})), x=>x.leads, ()=>cvar('--chart-mqls'), 10, 'Conversas');
-  // Mar02: donut de taxa de qualificação (verde = MQL, vermelho = desqualificado)
-  donutQlf('mQlfDonut', t.mqls, t.leads);
-  // Compilado dos Anúncios (CAC/Fat/ROAS "-" até conectar compradores; ordena por CPA como proxy)
+  comboChart('mCombo', daily(fL,fM,fS), true);
+  // Conversas e gasto por anúncio (Top 10) — só Meta Ads
   const adAggM=buildAgg(fL,fM,fS,'ad');
-  const topCacRows=Object.entries(adAggM).filter(([ad])=>!isNoAttrib(ad)).map(([ad,a])=>{const d=derive(a),s=salesOf(a);
-    return {k:ad, cells:{dim:ad,mqls:a.mqls,cpmql:d.cpmql,vendas:s.vendas,cac:s.cac,fat:s.fat,roas:s.roas},
-      _ord:(s.cac!=null?s.cac:(d.cpmql!=null?d.cpmql:Infinity))};})
+  const byAd=Object.entries(adAggM).filter(([ad])=>!isNoAttrib(ad));
+  hbar('mMqlAd', byAd.map(([label,a])=>({label,leads:a.leads})), x=>x.leads, ()=>cvar('--chart-mqls'), 10, 'Conversas');
+  hbar('mGastoAd', byAd.map(([label,a])=>({label,leads:+(a.sp*taxf()).toFixed(2)})), x=>x.leads, ()=>cvar('--chart-gasto'), 10, 'R$');
+  const topRows=byAd.map(([ad,a])=>{const d=derive(a);
+    return {k:ad, cells:{dim:ad,gasto:d.gasto,leads:a.leads,cpl:d.cpl}, _ord:(d.cpl!=null?d.cpl:Infinity)};})
     .sort((a,b)=>a._ord-b._ord).slice(0,10);
-  // sem fit: 7 colunas não cabem legíveis dividindo 1/3 da página (.trio) —
-  // largura automática por coluna + scroll horizontal dentro do próprio card
-  // (mesmo padrão das tabelas hierárquicas), em vez de espremer tudo.
   renderTable({id:'mTopCac', center:true,
-    cols:[{key:'dim',label:'Anúncios',type:'dim',big:true},{key:'mqls',label:'Agend.',type:'int'},
-      {key:'cpmql',label:'CPA',type:'brl'},{key:'vendas',label:'Vendas',type:'int'},
-      {key:'cac',label:'CAC',type:'brl'},{key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num'}],
-    rows:topCacRows});
+    cols:[{key:'dim',label:'Anúncios',type:'dim',big:true},{key:'gasto',label:'Gasto',type:'brl'},{key:'leads',label:'Conversas',type:'int'},{key:'cpl',label:'CPL',type:'brl'}],
+    rows:topRows});
 
   const dl=daily(fL,fM,fS).slice().reverse();
-  renderTable({id:'tDaily', cols:DAILY_COLS, center:true, fit:true,
+  renderTable({id:'tDaily', cols:META_DAILY_COLS, center:true, fit:true,
     rows:dl.map(x=>{const d=derive(x); return {k:x.d, cells:dailyCells(x,d)};}),
     total:(()=>{const d=derive(t);return dailyCells({...t,d:null},d,true);})(),
     selectable:true, selSet:STATE.selDays,
@@ -958,21 +951,14 @@ function renderMeta(){
   // scroll nenhum e fica idêntico a uma tabela única, cabeçalho incluso.
   const hcols=[
     {key:'dim',label:'',type:'dim',band:'l'},{key:'gasto',label:'Gasto',type:'brl',band:'l',heat:'gasto'},
-    {key:'cpm',label:'CPM',type:'brl'},
-    {key:'ctr',label:'CTR',type:'pct'},
-    {key:'leads',label:'Conversas',type:'int'},{key:'cpl',label:'CPL',type:'brl',heat:'cpl',heatInv:true},
-    {key:'tx',label:'Tx‑Agend.',type:'pct'},
-    {key:'mqls',label:'Agend.',type:'int'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
-    {key:'convmql',label:'ConvAgend',type:'pct'},{key:'vendas',label:'Vendas',type:'int'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
-    {key:'fat',label:'Fat.',type:'brl'},{key:'receita',label:'Receita',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
+    {key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},{key:'cl',label:'Cliques',type:'int'},
+    {key:'leads',label:'Conversas',type:'int',heat:'leads'},{key:'cpl',label:'CPL',type:'brl',heat:'cpl',heatInv:true},
   ];
   function hierRows(map,search){ return Object.entries(map)
     .filter(([k])=>!isNoAttrib(k)&&(!search||norm(k).includes(norm(search))))
-    .map(([k,a])=>{const d=derive(a),s=salesOf(a);
-    return {k, cells:{dim:k,gasto:d.gasto,cpm:d.cpm,ctr:d.ctr,cr:d.cr,convlp:d.convlp,leads:a.leads,cpl:d.cpl,tx:d.tx,mqls:a.mqls,cpmql:d.cpmql,
-      convmql:s.convmql,vendas:s.vendas,cac:s.cac,fat:s.fat,receita:s.receita,roas:s.roas}};}); }
-  function totRowOf(tt){const d=derive(tt),s=salesOf(tt);return{dim:null,gasto:d.gasto,cpm:d.cpm,ctr:d.ctr,cr:d.cr,convlp:d.convlp,leads:tt.leads,cpl:d.cpl,tx:d.tx,mqls:tt.mqls,cpmql:d.cpmql,
-    convmql:s.convmql,vendas:s.vendas,cac:s.cac,fat:s.fat,receita:s.receita,roas:s.roas};}
+    .map(([k,a])=>{const d=derive(a);
+    return {k, cells:{dim:k,gasto:d.gasto,cpm:d.cpm,ctr:d.ctr,cl:a.cl,leads:a.leads,cpl:d.cpl}};}); }
+  function totRowOf(tt){const d=derive(tt);return{dim:null,gasto:d.gasto,cpm:d.cpm,ctr:d.ctr,cl:tt.cl,leads:tt.leads,cpl:d.cpl};}
   const Sc=metaScope('C'), Sa=metaScope('A'), Sd=metaScope('D');
   const aggC=buildAgg(Sc.fL,Sc.fM,Sc.fS,'camp'), aggA=buildAgg(Sa.fL,Sa.fM,Sa.fS,'adset'), aggD=buildAgg(Sd.fL,Sd.fM,Sd.fS,'ad');
   // Tabelas hierárquicas: NÃO usam "fit" — a dimensão (campanha/conjunto/anúncio)
@@ -993,14 +979,20 @@ function renderMeta(){
   mqlByDimChart('chAdset', Sa.fL, Sa.fM, Sa.fS, aggA, 'adset', STATE.mSelA);
   mqlByDimChart('chAd', Sd.fL, Sd.fM, Sd.fS, aggD, 'ad', STATE.mSelAd);
 
-  // todas as conversas (agendadas destacadas na coluna "Agendado")
-  const q=fL.slice().sort((a,b)=>(a.d<b.d?1:-1));
-  const nq=q.filter(l=>l.q).length;
-  document.getElementById('qCount').textContent=q.length+' conversas · '+nq+' agendadas';
-  renderTable({id:'tQual',
-    cols:[{key:'d',label:'Data',type:'date'},{key:'nm',label:'Nome',type:'dim'},{key:'qual',label:'Agendado',type:'dim',w:100},{key:'prof',label:'Dia',type:'dim',w:90},
-      {key:'bucket',label:'Etapa no CRM',type:'dim',big:true},{key:'ph',label:'Telefone',type:'dim',w:110}],
-    rows:q.map((l,i)=>({k:'q'+i, cells:{d:l.d,nm:l.nm,qual:l.q?'✔ Sim':'Não',prof:l.prof,bucket:l.bucket,ph:l.ph}}))});
+}
+
+/* ---------------- PÁGINA: Agendamentos (auditoria) ---------------- */
+const escA=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function renderAgenda(){
+  const fL=leadsActive().filter(l=>l.q).sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:0));
+  const nC=fL.filter(l=>l.c).length;
+  document.getElementById('agCount').textContent=fL.length+' agendamentos · '+nC+' consultas';
+  renderTable({id:'tAgenda', center:true,
+    cols:[{key:'d',label:'Data',type:'date'},{key:'agd',label:'Agendado em',type:'date'},{key:'nm',label:'Nome',type:'dim',big:true},
+      {key:'ph',label:'Telefone',type:'dim',w:110},{key:'bucket',label:'Etapa no CRM',type:'dim',big:true},
+      {key:'cons',label:'Consulta',type:'dim',w:90},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
+    rows:fL.map((l,i)=>({k:'a'+i, cells:{d:l.d,agd:l.agd||null,nm:l.nm,ph:l.ph,bucket:l.bucket,cons:l.c?'✔ Sim':'—',
+      lk:l.lk?`<a class="crm-link" href="${escA(l.lk)}" target="_blank" rel="noopener noreferrer">Abrir no CRM ↗</a>`:'—'}}))});
 }
 
 /* ---------------- date presets ---------------- */
@@ -1097,12 +1089,13 @@ function setPage(p){ STATE.page=p;
   document.getElementById('page-geral').classList.toggle('active',p==='geral');
   document.getElementById('page-meta').classList.toggle('active',p==='meta');
   document.getElementById('page-rel').classList.toggle('active',p==='rel');
-  document.getElementById('ptitle').textContent = p==='meta'?'Captura Meta Ads':(p==='rel'?'Relatório':'Visão Geral');
+  document.getElementById('page-agenda').classList.toggle('active',p==='agenda');
+  document.getElementById('ptitle').textContent = {meta:'Captura Meta Ads',rel:'Relatório',agenda:'Agendamentos'}[p]||'Visão Geral';
   document.getElementById('navToggle').checked=false;
-  history.replaceState(null,'', p==='meta'?'#meta':(p==='rel'?'#rel':'#geral'));
+  history.replaceState(null,'', '#'+p);
   renderAll();
 }
-function renderAll(){ if(STATE.page==='meta') renderMeta(); else if(STATE.page==='rel') renderRelatorio(); else renderGeral(); }
+function renderAll(){ if(STATE.page==='meta') renderMeta(); else if(STATE.page==='rel') renderRelatorio(); else if(STATE.page==='agenda') renderAgenda(); else renderGeral(); }
 
 function applyTheme(){ const t=localStorage.getItem('dt_theme'); if(t==='light') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme','dark'); }
 applyTheme();
@@ -1180,7 +1173,7 @@ document.getElementById('buildFoot').textContent='build __BUILD_ID__';
 document.getElementById('buildFoot2').textContent='· build __BUILD_ID__';
 
 syncDateInputs();
-setPage(location.hash==='#meta'?'meta':(location.hash==='#rel'?'rel':'geral'));
+setPage(['#meta','#rel','#agenda'].includes(location.hash)?location.hash.slice(1):'geral');
 
 /* auto-refresh com cache-bust ~30 min */
 setTimeout(()=>{ location.href=location.pathname+'?t='+Date.now()+location.hash; }, 30*60*1000);
