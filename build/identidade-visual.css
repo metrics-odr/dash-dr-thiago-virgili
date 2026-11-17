@@ -1,0 +1,49 @@
+/* ============================================================================
+   IDENTIDADE VISUAL — Dr. Thiago Virgili | Contour Clinique
+   Preto + dourado (logo Contour). TODAS as cores ficam AQUI.
+   Tema ESCURO (preto/dourado) é o padrão; o CLARO (marfim) é a alternativa (toggle).
+   ============================================================================ */
+
+/* ------------------------------ TEMA CLARO (alternativo) -------------------- */
+:root{
+  --text-primary:#14110C; --bg:#F6F2EA; --surface:#FFFFFF; --border:#E7DFCE;
+  --muted:#7A705D; --ink:#1E1A12; --selected:#F2E6C9;
+  --accent-blue:#9A7330; --accent-blue-light:#F7EFDC; --accent-soft:rgba(154,115,48,.16); --on-accent:#FFFFFF;
+  --good:#1E9E63; --bad:#D6453D; --yellow:#C98A10; --aqua:#2A98AE; --red:#D6453D; --black:#1E1A12;
+  --grid:#EFE8D8; --thead:#F8F3E7; --tfoot:#F2EBD9;
+  --cc1:#9A7330; --cc2:#1E9E63; --cc3:#D6453D; --cc4:#C98A10; --cc5:#6F5BB0;
+  --cc6:#2A98AE; --cc7:#B5652F; --cc8:#7C9A2E; --cc9:#8A5A1F; --cc10:#5C6BB8;
+  --chart-leads:#9A7330; --chart-mqls:#2A98AE; --chart-gasto:#D6453D;
+  --chart-cpl:#1E1A12; --chart-cpmql:#C98A10;
+  --bar-q:#1E9E63; --bar-noq:#BDB5A2;
+  --heat-gasto:#D6453D; --heat-leads:#9A7330; --heat-mqls:#2A98AE; --heat-roas:#E0B400; --heat-vendas:#1E9E63;
+  --heat-cpl:#C9722F; --heat-cpmql:#8B5CF6; --heat-cac:#C2306A;
+  --step-mql-bg:#E4F3F6; --step-mql-bd:#2A98AE;
+  --step-gasto-bg:#FBE9E7; --step-gasto-bd:#D6453D;
+  --step-fat-bg:#E6F6EC; --step-fat-bd:#1E9E63;
+}
+
+/* ------------------------------ TEMA ESCURO (padrão) ------------------------ */
+:root[data-theme="dark"]{
+  --text-primary:#070605;      /* sidebar */
+  --bg:#0B0A09;                /* fundo principal (preto da marca) */
+  --surface:#15130F;           /* cards */
+  --border:#2C261B;
+  --ink:#F3EDE0;               /* texto principal (marfim) */
+  --muted:#A89F8C;
+  --accent-blue:#C9A55C;       /* ACCENT = dourado da marca (nome da var herdado do motor) */
+  --accent-blue-light:#221C10; --accent-soft:rgba(201,165,92,.16); --on-accent:#17120A;
+  --selected:#3A2F18;
+  --good:#3FB68B; --bad:#E5534B; --red:#E5534B; --yellow:#E8B04A; --aqua:#5BB5C9; --black:#0B0A09;
+  --grid:#26211A; --thead:#1D1913; --tfoot:#1A160F;
+  --cc1:#C9A55C; --cc2:#3FB68B; --cc3:#E5534B; --cc4:#F0D58E; --cc5:#8D7BC9;
+  --cc6:#5BB5C9; --cc7:#D98A5B; --cc8:#9BBF5A; --cc9:#B07A3C; --cc10:#7F8FD1;
+  --chart-leads:#C9A55C; --chart-mqls:#5BB5C9; --chart-gasto:#E5534B;
+  --chart-cpl:#F3EDE0; --chart-cpmql:#E89B3C;
+  --bar-q:#3FB68B; --bar-noq:#5A5446;
+  --heat-gasto:#E5534B; --heat-leads:#C9A55C; --heat-mqls:#5BB5C9; --heat-roas:#FFD400; --heat-vendas:#3FB68B;
+  --heat-cpl:#E89B3C; --heat-cpmql:#A78BFA; --heat-cac:#F472B6;
+  --step-mql-bg:#10242A; --step-mql-bd:#5BB5C9;
+  --step-gasto-bg:#321A18; --step-gasto-bd:#E5534B;
+  --step-fat-bg:#12291F; --step-fat-bd:#3FB68B;
+}
