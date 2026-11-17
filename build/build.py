@@ -371,7 +371,7 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
         {"created": 0, "name": 5, "msg": 6, "phone": 7, "agendado": 8, "status": 9, "link": 10},
     )
     leads = []
-    seen_conv = set()
+    seen_conv = {}
     for row in conversas_rows[1:]:
         if not any((c or "").strip() for c in row) or len([c for c in row if (c or "").strip()]) < 3:
             continue
@@ -381,18 +381,23 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             continue
         phone = canon_phone(r["phone"])
         kid = kommo_id(r["link"])
-        dedup = (phone or kid or r["name"], d)   # mesma pessoa, mesmo dia = 1 conversa
-        if dedup in seen_conv and (phone or kid):
-            continue
-        seen_conv.add(dedup)
+        pkey = kid or phone                      # contato unico = 1 conversa (na data da 1a mensagem)
         ag = (ag_by_entity.get(kid) if kid else None) or (ag_by_phone.get(phone) if phone else None)
         if ag:
             ag["used"] = True
+        if pkey and pkey in seen_conv:
+            prev = seen_conv[pkey]               # repetido: so promove agendamento/consulta
+            st2 = r["status"] or ""
+            if ag or norm(r["agendado"]) == "sim" or re.search(r"consulta", st2, re.I):
+                prev["q"] = 1; prev["plat"] = "Agendado"
+            if re.search(r"consulta", st2, re.I):
+                prev["c"] = 1; prev["bucket"] = st2
+            continue
         status = r["status"] or "Sem status"
         consulta = 1 if re.search(r"consulta", status, re.I) else 0      # etapa "Consulta" do funil
         agendado = bool(ag) or norm(r["agendado"]) == "sim" or bool(consulta)   # quem fez consulta tambem agendou
         dt = datetime.strptime(d, "%Y-%m-%d")
-        leads.append({
+        lead = {
             "d": d,
             "src": "org",                        # CRM nao informa campanha/anuncio
             "plat": "Agendado" if agendado else "Não agendado",
@@ -407,7 +412,10 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             "nm": first_last_initial(clean_name(r["name"])),
             "em": "—",
             "ph": mask_phone(r["phone"]),
-        })
+        }
+        leads.append(lead)
+        if pkey:
+            seen_conv[pkey] = lead
     # agendamentos sem conversa correspondente -> lead extra (data do agendamento)
     n_extra = 0
     for a in ags:
@@ -418,7 +426,7 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             "d": a["d"], "src": "org", "plat": "Agendado",
             "camp": "(sem campanha)", "adset": "(sem conjunto)", "ad": "(sem anúncio)",
             "prof": WEEKDAYS[datetime.strptime(a["d"], "%Y-%m-%d").weekday()],
-            "bucket": "Agendado (sem conversa no CRM)", "q": 1, "c": 0, "utm": 0,
+            "bucket": "Agendado (sem conversa no CRM)", "q": 1, "c": 0, "utm": 0, "x": 1,   # x=1: nao conta como conversa nova
             "lk": (KOMMO_LEAD_URL + a["entity"]) if a["entity"] else "", "agd": a["d"],
             "nm": first_last_initial(clean_name(a["name"])) if a["name"] else "—",
             "em": "—", "ph": mask_phone(a["phone"]),

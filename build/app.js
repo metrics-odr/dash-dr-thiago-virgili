@@ -35,7 +35,6 @@ const STATE = {
 };
 const taxf = ()=> STATE.tax ? TAX : 1;
 /* Página de mídia paga: "Leads" = conversas iniciadas do Meta Ads (o CRM não traz campanha). */
-const paidMode = ()=> STATE.page==='meta';
 
 /* active date test: selDays override the De/Até range */
 function dateActive(d){
@@ -107,13 +106,13 @@ function buildAgg(fL,fM,fS,dim){
      a aba Conversas do CRM não traz campanha/anúncio. As conversas do CRM ficam em
      "(sem campanha)" (oculto nas tabelas por dimensão, mas presente nos totais da Geral). */
   fM.forEach(r=>{const a=get(r[dim]); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.leads+=r.ml||0; a.msgs+=r.ml||0;});
-  fL.forEach(r=>{const a=get(r[dim]); a.leads+=1; a.mqls+=r.q; a.reunioes+=r.c||0;});
+  fL.forEach(r=>{const a=get(r[dim]); a.leads+=r.x?0:1; a.mqls+=r.q; a.reunioes+=r.c||0;});
   fS.forEach(r=>{const a=get(r[dim]); a.vendas+=r.vendas||0; a.fat+=r.fat||0; a.receita+=r.receita||0;});
   return m;
 }
 function totals(fL,fM,fS){
   let sp=0,im=0,cl=0,pv=0,chk=0,ml=0; fM.forEach(r=>{sp+=r.sp;im+=r.im;cl+=r.cl;pv+=r.pv;chk+=r.ck||0;ml+=r.ml||0;});
-  return {sp, im, cl, pv, chk, msgs:ml, leads:fL.length+(paidMode()?ml:0), reunioes:fL.reduce((s,r)=>s+(r.c||0),0), mqls:fL.reduce((s,r)=>s+r.q,0),
+  return {sp, im, cl, pv, chk, msgs:ml, leads:fL.filter(r=>!r.x).length, reunioes:fL.reduce((s,r)=>s+(r.c||0),0), mqls:fL.reduce((s,r)=>s+r.q,0),
     vendas:fS.reduce((s,r)=>s+(r.vendas||0),0), fat:fS.reduce((s,r)=>s+(r.fat||0),0),
     receita:fS.reduce((s,r)=>s+(r.receita||0),0)};
 }
@@ -121,8 +120,8 @@ function totals(fL,fM,fS){
    compra (aba Compradores), não a data da conversa — ver build.py::process. */
 function daily(fL,fM,fS){
   const days={}; const g=d=>days[d]||(days[d]={d, sp:0,im:0,cl:0,pv:0,chk:0,leads:0,msgs:0,reunioes:0,mqls:0,vendas:0,fat:0,receita:0});
-  fM.forEach(r=>{if(!r.d)return; const a=g(r.d); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.msgs+=r.ml||0; if(paidMode()) a.leads+=r.ml||0;});
-  fL.forEach(r=>{if(!r.d)return; const a=g(r.d); a.leads+=1; a.mqls+=r.q; a.reunioes+=r.c||0;});
+  fM.forEach(r=>{if(!r.d)return; const a=g(r.d); a.sp+=r.sp; a.im+=r.im; a.cl+=r.cl; a.pv+=r.pv; a.chk+=r.ck||0; a.msgs+=r.ml||0;});
+  fL.forEach(r=>{if(!r.d)return; const a=g(r.d); a.leads+=r.x?0:1; a.mqls+=r.q; a.reunioes+=r.c||0;});
   fS.forEach(r=>{if(!r.d)return; const a=g(r.d); a.vendas+=r.vendas||0; a.fat+=r.fat||0; a.receita+=r.receita||0;});
   return Object.values(days).sort((a,b)=>a.d<b.d?-1:1);
 }
@@ -500,6 +499,23 @@ function mqlByDimChart(id, fL, fM, fS, agg, dim, selSet){
 /* ---------------- KPI cards ---------------- */
 function kpiCard(k){ return `<div class="kpi ${k.hero?'hero':''}"><div class="kl"><span>${k.label}</span>${k.pill?`<span class="pill q">${k.pill}</span>`:''}</div><div class="kv">${k.val}</div><div class="ka">${k.aux||''}</div></div>`; }
 
+const NA='<span class="na-tag">sem dado</span>';
+/* Funil único (Visão Geral, Relatório e Captura Meta Ads). crm=false: o CRM não tem
+   campanha/anúncio, então com filtro de campanha/conjunto/anúncio as etapas do CRM ficam "sem dado". */
+function funnelSteps(t,dv,crm){
+  const s=salesOf(t), g=dv.gasto;
+  return [
+    ['Gasto Total', brl(g), [], false, 'hl-gasto'],
+    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
+    ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
+    ['Conversas Totais', intf(t.msgs), [['CPL-T',brl(dv.cplt)],['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)]]],
+    ['Novas Conversas', crm?intf(t.leads):NA, [['CPL-N',crm?brl(dv.cpl):NA],['Novas/Totais',crm?pct(dv.prop):NA]], !crm],
+    ['Agendamentos', crm?intf(t.mqls):NA, [['Tx‑Agend.',crm?pct(dv.tx):NA],['CPA',crm?brl(dv.cpmql):NA]], !crm, 'hl-mql'],
+    ['Consultas', crm&&s.reunioes!=null?intf(s.reunioes):NA, [['Agend→Consulta',crm&&s.reunioes!=null?pct(s.reunioes/t.mqls):NA],['Custo/Consulta',crm&&s.cprr!=null?brl(s.cprr):NA]], !crm||s.reunioes==null],
+    ['Vendas', crm&&s.vendas!=null?intf(s.vendas):NA, [['Consulta→Venda',crm&&s.txvenda!=null?pct(s.txvenda):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
+    ['Faturamento', crm&&s.fat!=null?brl(s.fat):NA, [['ROAS',crm&&s.roas!=null?numf(s.roas):NA],['Ticket',crm&&s.tm!=null?brl(s.tm):NA]], !crm||s.fat==null, 'hl-fat'],
+  ];
+}
 /* ---------------- PAGE 1: Visão Geral ---------------- */
 /* IDs dos elementos por página — a Visão Geral e o Relatório compartilham o
    MESMO corpo (renderGeralCore), só mudam os alvos no DOM. */
@@ -513,20 +529,7 @@ function renderGeralCore(ids){
   const nAds=leadsAds.length, mqlsAds=leadsAds.reduce((s,r)=>s+r.q,0);
   const nOrg=fL.filter(l=>l.src==='org').length;
   const semUtm=fL.filter(l=>!l.utm).length, comUtm=t.leads-semUtm;
-  const NA='<span class="na-tag">sem dado</span>';
-  const s=salesOf(t);
-  const steps=[
-    ['Gasto Total', brl(g), [], false, 'hl-gasto'],
-    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
-    ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
-    ['Conversas Totais (Mensagem)', intf(t.msgs), [['CPL-T',brl(dv.cplt)],['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)]]],
-    ['Novas Conversas', intf(t.leads), [['CPL-N',brl(dv.cpl)],['Novas/Totais',pct(dv.prop)]]],
-    ['Agendamentos', intf(t.mqls), [['Tx‑Agend.',pct(dv.tx)],['CPA',brl(dv.cpmql)]], false, 'hl-mql'],
-    ['Consultas', s.reunioes!=null?intf(s.reunioes):NA, [['Agend→Consulta',s.txag!=null&&s.reunioes!=null?pct(s.reunioes/t.mqls):NA],['Custo/Consulta',s.cprr!=null?brl(s.cprr):NA]], s.reunioes==null],
-    ['Vendas', s.vendas!=null?intf(s.vendas):NA, [['Consulta→Venda',s.txvenda!=null?pct(s.txvenda):NA],['CAC',s.cac!=null?brl(s.cac):NA]], s.vendas==null],
-    ['Faturamento', s.fat!=null?brl(s.fat):NA, [['ROAS',s.roas!=null?numf(s.roas):NA],['Ticket',s.tm!=null?brl(s.tm):NA]], s.fat==null, 'hl-fat'],
-  ];
-  document.getElementById(ids.funnel).innerHTML=funnelHTML(steps);
+  document.getElementById(ids.funnel).innerHTML=funnelHTML(funnelSteps(t,dv,true));
   // ---- Mar05: métricas secundárias mais úteis (não repetem o funil) ----
   const dd=daily(fL,fM,fS), nDays=dd.length||1;
   const adAgg=buildAgg(fL,fM,fS,'ad');
@@ -859,21 +862,17 @@ const DAILY_COLS=[
   {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
   {key:'msgs',label:'Conv. Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
   {key:'leads',label:'Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
-  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
+  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
   {key:'reunioes',label:'Consultas',type:'int'},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
   {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
-const META_DAILY_COLS=[
-  {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
-  {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
-  {key:'cl',label:'Cliques',type:'int'},{key:'leads',label:'Conversas',type:'int',heat:'leads'},{key:'cpl',label:'CPL',type:'brl',heat:'cpl',heatInv:true},
-];
+const META_DAILY_COLS=DAILY_COLS.filter(c=>!['vendas','cac','fat','roas','reunioes','prop'].includes(c.key));   // tabela estreita: sem vendas/consultas/proporção
 function dailyCells(x,d,isTotal){
   const s=salesOf(x);
   return {date:isTotal?null:x.d, wd:isTotal?'':weekday(x.d), gasto:d.gasto, cpm:d.cpm, ctr:d.ctr, cl:x.cl,
     msgs:x.msgs, cplt:d.cplt, leads:x.leads, cpl:d.cpl, prop:d.prop,
-    mqls:x.mqls, cpmql:d.cpmql, reunioes:x.reunioes||0,
+    mqls:x.mqls, tx:d.tx, cpmql:d.cpmql, reunioes:x.reunioes||0,
     vendas:s.vendas, cac:s.cac, fat:s.fat, receita:s.receita, roas:s.roas};
 }
 
@@ -913,17 +912,13 @@ function selDim(dim,key,ctrl){
   renderMeta();
 }
 function renderMeta(){
-  const F=metaScope(null), fL=F.fL, fM=F.fM, fS=F.fS;   // 100% aba Meta Ads
+  const F=metaScope(null), fM=F.fM;   // tabelas/gráficos por campanha·conjunto·anúncio = 100% Meta Ads
+  const crmOn=!(STATE.mSelC.size||STATE.mSelA.size||STATE.mSelAd.size);   // CRM não tem campanha/anúncio
+  const fL=crmOn?leadsActive():[], fS=crmOn?salesActive():[];
   const t=totals(fL,fM,fS), dv=derive(t), g=dv.gasto;
-  const steps=[
-    ['Gasto Total', brl(g), [], false, 'hl-gasto'],
-    ['Impressões', intf(t.im), [['CPM',brl(dv.cpm)]]],
-    ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
-    ['Mensagens (conversas iniciadas)', intf(t.leads), [['CPL',brl(dv.cpl)],['Msg/Clique',pct(t.cl?t.leads/t.cl:null)]], false, 'hl-mql'],
-  ];
-  document.getElementById('metaFunnel').innerHTML=funnelHTML(steps);
-
-  comboChart('mCombo', daily(fL,fM,fS), true);
+  document.getElementById('metaFunnel').innerHTML=funnelHTML(funnelSteps(t,dv,crmOn));
+  const mn=document.getElementById('metaNote'); if(mn) mn.textContent=crmOn?'Mesmo funil da Visão Geral. Conversas Totais = Meta Ads (Messaging Conversations Started); Novas Conversas (contatos únicos), Agendamentos e Consultas = CRM/planilha. Tabelas por campanha/conjunto/anúncio usam só a aba Meta Ads.':'Filtro de campanha/conjunto/anúncio ativo: o CRM não traz campanha/anúncio, então Novas Conversas, Agendamentos e Consultas ficam ocultos. Limpe o filtro para vê-los.';
+  comboChart('mCombo', daily(fL,fM,fS));
   // Conversas e gasto por anúncio (Top 10) — só Meta Ads
   const adAggM=buildAgg(fL,fM,fS,'ad');
   const byAd=Object.entries(adAggM).filter(([ad])=>!isNoAttrib(ad));
@@ -937,9 +932,10 @@ function renderMeta(){
     rows:topRows});
 
   const dl=daily(fL,fM,fS).slice().reverse();
+  const crmNull=c=>{ if(!crmOn){ c.leads=c.cpl=c.prop=c.mqls=c.tx=c.cpmql=c.reunioes=null; } return c; };
   renderTable({id:'tDaily', cols:META_DAILY_COLS, center:true, fit:true,
-    rows:dl.map(x=>{const d=derive(x); return {k:x.d, cells:dailyCells(x,d)};}),
-    total:(()=>{const d=derive(t);return dailyCells({...t,d:null},d,true);})(),
+    rows:dl.map(x=>{const d=derive(x); return {k:x.d, cells:crmNull(dailyCells(x,d))};}),
+    total:(()=>{const d=derive(t);return crmNull(dailyCells({...t,d:null},d,true));})(),
     selectable:true, selSet:STATE.selDays,
     onSelect:(k,e)=>{ toggleSet(STATE.selDays,k,e&&(e.ctrlKey||e.metaKey)); syncDateInputs(); renderAll(); },
   });

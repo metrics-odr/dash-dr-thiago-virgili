@@ -105,7 +105,7 @@
      disponível — sem isso, o grid podia "vazar" e criar scroll horizontal na PÁGINA. */
   .two-col{grid-template-columns:380px minmax(0,1fr)}
   .three-col{grid-template-columns:360px minmax(0,1fr)}
-  .funnel-grid{grid-template-columns:340px minmax(0,1fr); align-items:start}
+  .funnel-grid{grid-template-columns:370px minmax(0,1fr); align-items:start}
   .funnel-charts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-content:start}
   /* Mar02: três colunas de tamanho igual · Mar05: quatro gráficos na mesma linha */
   .trio{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:stretch}
@@ -148,7 +148,7 @@
 
   /* Funnel */
   .funnel{display:flex; flex-direction:column; gap:7px}
-  .step{display:flex; align-items:center; justify-content:space-between; gap:14px; row-gap:8px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:11px 15px; border-left:4px solid var(--accent-blue)}
+  .step{display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:nowrap; height:72px; box-sizing:border-box; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:11px 15px; border-left:4px solid var(--accent-blue)}
   .step.na{border-left-color:var(--border); opacity:.7}
   /* Mar01: destaque das etapas MQL (azulado), Gasto (avermelhado) e Receita/Faturamento (esverdeado) + fonte mais forte */
   .step.hl-mql{background:var(--step-mql-bg); border-left-color:var(--step-mql-bd)}
