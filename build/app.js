@@ -67,12 +67,14 @@ function derive(a){
    buildAgg/daily/totals junto com fL/fM, acendendo funil, cards, colunas das
    tabelas e Top/Piores anúncios. Agendamentos/Reuniões Realizadas não têm fonte
    neste cliente — ficam null -> "-" até existir lista do comercial. */
+const VALOR_CONSULTA=800;   // toda consulta gera R$ 800 de faturamento; vendas de procedimento somam por cima
 function salesOf(a){
   const g=(a?a.sp:0)*taxf();
   const mqls=(a&&a.mqls)||0;
   const agendamentos=(a&&a.mqls)||0, reunioes=(a&&a.reunioes)||0;   // agendamentos = q do CRM; reunioes = CONSULTAS
-  const vendas=(a&&a.vendas)||0, fat=(a&&a.fat)||0, receita=(a&&a.receita)||0;
-  const hasAg=agendamentos>0, hasRe=reunioes>0, hasVd=vendas>0||fat>0;
+  const vendas=(a&&a.vendas)||0, fatProc=(a&&a.fat)||0, receitaProc=(a&&a.receita)||0;
+  const fat=fatProc+reunioes*VALOR_CONSULTA, receita=receitaProc+reunioes*VALOR_CONSULTA;
+  const hasAg=agendamentos>0, hasRe=reunioes>0, hasVd=vendas>0, hasFat=fat>0;
   return {
     // MQL → Agendamento
     agendamentos: hasAg?agendamentos:null,
@@ -85,13 +87,13 @@ function salesOf(a){
     // Reunião Realizada → Venda
     vendas:       hasVd?vendas:null,
     txvenda:      hasVd&&hasRe?vendas/reunioes:null,       // vendas / reuniões realizadas
-    fat:          hasVd?fat:null,
+    fat:          hasFat?fat:null,
     cac:          hasVd&&vendas?g/vendas:null,
-    roas:         hasVd&&g?fat/g:null,
-    tm:           hasVd&&vendas?fat/vendas:null,
-    receita:      hasVd?receita:null,
-    roasReceita:  hasVd&&g?receita/g:null,
-    tmReceita:    hasVd&&vendas?receita/vendas:null,
+    roas:         hasFat&&g?fat/g:null,
+    tm:           hasVd&&vendas?fatProc/vendas:null,
+    receita:      hasFat?receita:null,
+    roasReceita:  hasFat&&g?receita/g:null,
+    tmReceita:    hasVd&&vendas?receitaProc/vendas:null,
     convmql:      hasVd&&mqls?vendas/mqls:null,
   };
 }
@@ -333,7 +335,7 @@ function comboChart(id, d, metaOnly){
     line('Gasto',d.map(x=>+g(x).toFixed(2)),cGasto,1),
     line('CPL-T',d.map(x=>x.msgs?+(g(x)/x.msgs).toFixed(2):null),cCpl,0),
     line('CPL-N',d.map(x=>x.leads?+(g(x)/x.leads).toFixed(2):null),'#F0D58E',0),
-    line('CPA',d.map(x=>x.mqls?+(g(x)/x.mqls).toFixed(2):null),cCpmql,0),
+    line('CPAgd',d.map(x=>x.mqls?+(g(x)/x.mqls).toFixed(2):null),cCpmql,0),
   ];
   charts[id]=new Chart(el,{
     data:{labels, datasets:ds},
@@ -394,7 +396,7 @@ function lineChart(id, d){
   const cCpmql=cvar('--chart-cpmql'), cCpl=cvar('--chart-cpl')||cink();
   charts[id]=new Chart(el,{type:'line',
     data:{labels,datasets:[
-      {label:'CPA',data:d.map(x=>x.mqls?+((x.sp*taxf())/x.mqls).toFixed(2):null),borderColor:cCpmql,backgroundColor:cCpmql,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
+      {label:'CPAgd',data:d.map(x=>x.mqls?+((x.sp*taxf())/x.mqls).toFixed(2):null),borderColor:cCpmql,backgroundColor:cCpmql,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
       {label:'CPL',data:d.map(x=>x.leads?+((x.sp*taxf())/x.leads).toFixed(2):null),borderColor:cCpl,backgroundColor:cCpl,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -510,8 +512,8 @@ function funnelSteps(t,dv,crm){
     ['Cliques', intf(t.cl), [['CTR',pct(dv.ctr)],['CPC',brl(dv.cpc)]]],
     ['Conversas Totais', intf(t.msgs), [['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)],['CPL-T',brl(dv.cplt)]]],
     ['Novas Conversas', crm?intf(t.leads):NA, [['Novas/Totais',crm?pct(dv.prop):NA],['CPL-N',crm?brl(dv.cpl):NA]], !crm],
-    ['Agendamentos', crm?intf(t.mqls):NA, [['Tx‑Agend.',crm?pct(dv.tx):NA],['CPA',crm?brl(dv.cpmql):NA]], !crm, 'hl-mql'],
-    ['Vendas', crm&&s.vendas!=null?intf(s.vendas):NA, [['Agend→Venda',crm&&s.vendas!=null&&t.mqls?pct(s.vendas/t.mqls):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
+    ['Agendamentos', crm?intf(t.mqls):NA, [['Tx‑Agend.',crm?pct(dv.tx):NA],['CPAgd',crm?brl(dv.cpmql):NA]], !crm, 'hl-mql'],
+    ['Vendas de Procedimentos', crm&&s.vendas!=null?intf(s.vendas):NA, [['Agend→Venda',crm&&s.vendas!=null&&t.mqls?pct(s.vendas/t.mqls):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
     ['Faturamento', crm&&s.fat!=null?brl(s.fat):NA, [['ROAS',crm&&s.roas!=null?numf(s.roas):NA],['Ticket',crm&&s.tm!=null?brl(s.tm):NA]], !crm||s.fat==null, 'hl-fat'],
   ];
 }
@@ -858,9 +860,9 @@ function renderRelatorio(){
 const DAILY_COLS=[
   {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
   {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
-  {key:'msgs',label:'Conv. Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
-  {key:'leads',label:'Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
-  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
+  {key:'msgs',label:'MSGs Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
+  {key:'leads',label:'MSGs Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
+  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPAgd',type:'brl',heat:'cpmql',heatInv:true},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
   {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
