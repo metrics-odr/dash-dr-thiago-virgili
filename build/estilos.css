@@ -184,7 +184,7 @@
   .tbl-double{max-height:420px}
   table.dt{border-collapse:separate; border-spacing:0; min-width:100%; font-size:12.5px; table-layout:fixed}
   table.dt th, table.dt td{padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  table.dt thead th{position:sticky; top:0; z-index:2; background:var(--thead); color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; text-align:right; cursor:pointer; user-select:none}
+  table.dt thead th{position:sticky; top:0; z-index:2; background:var(--thead); color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em; text-align:right; cursor:pointer; user-select:none; vertical-align:middle}
   table.dt thead th .rsz{position:absolute; right:0; top:0; width:9px; height:100%; cursor:col-resize; z-index:3}
   table.dt thead th .rsz:hover{background:var(--accent-blue); opacity:.5}
   /* dimensão (campanha/conjunto/anúncio) NUNCA quebra linha: a largura padrão já
@@ -211,7 +211,7 @@
   table.dt.dt-fit td{overflow:hidden; text-overflow:ellipsis}
   table.dt.dt-fit td.dim{white-space:normal; word-break:break-word}
   /* cabeçalho denso: fonte menor, sem espaçamento e podendo quebrar (não corta o nome) */
-  table.dt.dt-fit thead th{font-size:10px; letter-spacing:0; white-space:normal; line-height:1.12; padding:6px 4px; vertical-align:bottom}
+  table.dt.dt-fit thead th{font-size:10px; letter-spacing:0; white-space:normal; line-height:1.12; padding:6px 4px; vertical-align:middle}
   table.dt.dt-fit thead th .rsz{display:none}   /* sem redimensionar quando é fit-to-width */
   /* Donut de taxa de qualificação (Mar02) com rótulo central */
   .donut-wrap{position:relative; height:190px}

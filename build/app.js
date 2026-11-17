@@ -396,7 +396,7 @@ function lineChart(id, d){
   const cCpmql=cvar('--chart-cpmql'), cCpl=cvar('--chart-cpl')||cink();
   charts[id]=new Chart(el,{type:'line',
     data:{labels,datasets:[
-      {label:'CPAgd',data:d.map(x=>x.mqls?+((x.sp*taxf())/x.mqls).toFixed(2):null),borderColor:cCpmql,backgroundColor:cCpmql,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
+      {label:'CPAGD',data:d.map(x=>x.mqls?+((x.sp*taxf())/x.mqls).toFixed(2):null),borderColor:cCpmql,backgroundColor:cCpmql,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
       {label:'CPL',data:d.map(x=>x.leads?+((x.sp*taxf())/x.leads).toFixed(2):null),borderColor:cCpl,backgroundColor:cCpl,borderWidth:2,pointRadius:2,spanGaps:true,tension:.25},
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
@@ -861,8 +861,8 @@ const DAILY_COLS=[
   {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
   {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
   {key:'msgs',label:'MSGs Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
-  {key:'leads',label:'MSGs Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
-  {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPAgd',type:'brl',heat:'cpmql',heatInv:true},
+  {key:'leads',label:'MSGs Novas',type:'int',heat:'leads'},{key:'cpl',label:'CPL-N',type:'brl',heat:'cpl',heatInv:true},
+  {key:'mqls',label:'AGD',type:'int',heat:'mqls'},{key:'tx',label:'Tx AGD',type:'pct'},{key:'cpmql',label:'CPAGD',type:'brl',heat:'cpmql',heatInv:true},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
   {key:'fat',label:'Fat.',type:'brl',heat:'fat'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
