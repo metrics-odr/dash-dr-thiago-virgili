@@ -502,7 +502,7 @@ function mqlByDimChart(id, fL, fM, fS, agg, dim, selSet){
 function kpiCard(k){ return `<div class="kpi ${k.hero?'hero':''}"><div class="kl"><span>${k.label}</span>${k.pill?`<span class="pill q">${k.pill}</span>`:''}</div><div class="kv">${k.val}</div><div class="ka">${k.aux||''}</div></div>`; }
 
 const NA='<span class="na-tag">sem dado</span>';
-/* Funil único (Visão Geral, Relatório e Captura Meta Ads). crm=false: o CRM não tem
+/* Funil único (Visão Geral, Relatório e Meta Ads). crm=false: o CRM não tem
    campanha/anúncio, então com filtro de campanha/conjunto/anúncio as etapas do CRM ficam "sem dado". */
 function funnelSteps(t,dv,crm){
   const s=salesOf(t), g=dv.gasto;
@@ -893,7 +893,7 @@ function updateTblToolsUI(){
   });
 }
 
-/* ---------------- PAGE 2: Captura Meta Ads ---------------- */
+/* ---------------- PAGE 2: Meta Ads ---------------- */
 /* Mar04: considera TODOS os leads e TODO o gasto de todas as fontes de tráfego
    (sem filtrar por atribuição). Hoje só há Meta; quando vier google/tiktok/orgânico
    etc., já entram automaticamente. */
@@ -1084,7 +1084,7 @@ function setPage(p){ STATE.page=p;
   document.getElementById('page-meta').classList.toggle('active',p==='meta');
   document.getElementById('page-rel').classList.toggle('active',p==='rel');
   document.getElementById('page-agenda').classList.toggle('active',p==='agenda');
-  document.getElementById('ptitle').textContent = {meta:'Captura Meta Ads',rel:'Relatório',agenda:'Agendamentos'}[p]||'Visão Geral';
+  document.getElementById('ptitle').textContent = {meta:'Meta Ads',rel:'Relatório',agenda:'Agendamentos'}[p]||'Visão Geral';
   document.getElementById('navToggle').checked=false;
   history.replaceState(null,'', '#'+p);
   renderAll();
