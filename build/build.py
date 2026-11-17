@@ -340,6 +340,12 @@ def parse_agend_row(row, idx, ncols):
     return out
 
 
+# Mensagens padrao dos anuncios (adicionar outras aqui quando existirem)
+TRAFEGO_MSGS = ["vim do instagram e queria agendar uma consulta com dr. thiago"]
+def is_trafego(msg):
+    m = norm(msg or "")
+    return any(norm(t) in m for t in TRAFEGO_MSGS)
+
 def process(conversas_rows, meta_rows, agend_rows, sales_rows):
     # ---------------- Agendamentos ----------------
     aheader = agend_rows[0] if agend_rows else []
@@ -388,14 +394,14 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
         if pkey and pkey in seen_conv:
             prev = seen_conv[pkey]               # repetido: so promove agendamento/consulta
             st2 = r["status"] or ""
-            if ag or norm(r["agendado"]) == "sim" or re.search(r"consulta", st2, re.I):
+            if ag or norm(r["agendado"]) == "sim":
                 prev["q"] = 1; prev["plat"] = "Agendado"
-            if re.search(r"consulta", st2, re.I):
-                prev["c"] = 1; prev["bucket"] = st2
+            if is_trafego(r["msg"]):
+                prev["o"] = 1
             continue
         status = r["status"] or "Sem status"
-        consulta = 1 if re.search(r"consulta", status, re.I) else 0      # etapa "Consulta" do funil
-        agendado = bool(ag) or norm(r["agendado"]) == "sim" or bool(consulta)   # quem fez consulta tambem agendou
+        consulta = 0                             # sem fonte de consultas realizadas (nao inferir)
+        agendado = bool(ag) or norm(r["agendado"]) == "sim"
         dt = datetime.strptime(d, "%Y-%m-%d")
         lead = {
             "d": d,
@@ -405,7 +411,8 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
             "prof": WEEKDAYS[dt.weekday()],      # dia da semana da conversa
             "bucket": status,                    # etapa do funil no Kommo
             "q": 1 if agendado else 0,           # q = AGENDAMENTO (coluna "MQL" do motor)
-            "c": consulta,                       # 1 = chegou na etapa Consulta
+            "c": consulta,
+            "o": 1 if is_trafego(r["msg"]) else 0,   # 1 = origem Trafego Pago (mensagem padrao do anuncio)
             "lk": r["link"] if r["link"].startswith("http") else (KOMMO_LEAD_URL + kid if kid else ""),
             "agd": ag["d"] if ag else "",        # data registrada na aba Agendamentos
             "utm": 0,
