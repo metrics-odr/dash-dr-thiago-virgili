@@ -916,7 +916,7 @@ function renderMeta(){
   const fL=crmOn?leadsActive().filter(l=>l.o):[], fS=crmOn?salesActive():[];
   const t=totals(fL,fM,fS), dv=derive(t), g=dv.gasto;
   document.getElementById('metaFunnel').innerHTML=funnelHTML(funnelSteps(t,dv,crmOn));
-  const mn=document.getElementById('metaNote'); if(mn) mn.textContent=crmOn?'Mesmo funil da Visão Geral. Conversas Totais = Meta Ads (Messaging Conversations Started); Novas Conversas (contatos únicos) e Agendamentos = só leads do tráfego pago (mensagem padrão do anúncio) na planilha. Tabelas por campanha/conjunto/anúncio usam só a aba Meta Ads.':'Filtro de campanha/conjunto/anúncio ativo: o CRM não traz campanha/anúncio, então Novas Conversas e Agendamentos ficam ocultos. Limpe o filtro para vê-los.';
+  const mn=document.getElementById('metaNote'); if(mn) mn.textContent='';
   comboChart('mCombo', daily(fL,fM,fS));
   // Conversas e gasto por anúncio (Top 10) — só Meta Ads
   const adAggM=buildAgg(fL,fM,fS,'ad');
