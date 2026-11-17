@@ -423,6 +423,21 @@ def process(conversas_rows, meta_rows, agend_rows, sales_rows):
         leads.append(lead)
         if pkey:
             seen_conv[pkey] = lead
+    # agendamento conta na DATA EM QUE OCORREU (aba Agendamentos), nao na data da conversa:
+    # a conversa fica em `d` com q=0 e um registro x=1 (nao conta como conversa) leva q=1 na data do agendamento.
+    n_moved = 0
+    for l in list(leads):
+        if l["q"] and l.get("agd") and l["agd"] != l["d"]:
+            l["q"] = 0
+            leads.append({
+                "d": l["agd"], "src": l["src"], "plat": "Agendado",
+                "camp": l["camp"], "adset": l["adset"], "ad": l["ad"],
+                "prof": WEEKDAYS[datetime.strptime(l["agd"], "%Y-%m-%d").weekday()],
+                "bucket": l["bucket"], "q": 1, "c": l["c"], "o": l["o"], "utm": 0, "x": 1,
+                "lk": l["lk"], "agd": l["agd"], "nm": l["nm"], "em": l["em"], "ph": l["ph"],
+            })
+            n_moved += 1
+    print(f"  agendamentos movidos p/ a data do agendamento: {n_moved}", file=sys.stderr)
     # agendamentos sem conversa correspondente -> lead extra (data do agendamento)
     n_extra = 0
     for a in ags:
