@@ -860,7 +860,7 @@ function renderRelatorio(){
 const DAILY_COLS=[
   {key:'date',label:'Data',type:'date'},{key:'wd',label:'Dia',type:'dim',w:70},
   {key:'gasto',label:'Gasto',type:'brl',heat:'gasto'},{key:'cpm',label:'CPM',type:'brl'},{key:'ctr',label:'CTR',type:'pct'},
-  {key:'msgs',label:'MSGs Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
+  {key:'msgs',label:'MSGs Totais',type:'int'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
   {key:'leads',label:'MSGs Novas',type:'int',heat:'leads'},{key:'cpl',label:'CPL-N',type:'brl',heat:'cpl',heatInv:true},
   {key:'mqls',label:'AGD',type:'int',heat:'mqls'},{key:'tx',label:'Tx AGD',type:'pct'},{key:'cpmql',label:'CPAGD',type:'brl',heat:'cpmql',heatInv:true},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
