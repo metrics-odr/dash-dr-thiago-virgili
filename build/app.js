@@ -290,7 +290,7 @@ function renderTable(cfg){
 /* Heatmap por coluna: cor FIXA por métrica (definida em identidade-visual.css),
    só a OPACIDADE varia com o valor (maior valor = mais vibrante). */
 const HEAT_HUE={gasto:'--heat-gasto', leads:'--heat-leads', mqls:'--heat-mqls', roas:'--heat-roas', vendas:'--heat-vendas',
-  cpl:'--heat-cpl', cpmql:'--heat-cpmql', cac:'--heat-cac'};
+  cpl:'--heat-cpl', cpmql:'--heat-cpmql', cac:'--heat-cac', fat:'--heat-fat'};
 function heat(v,lo,hi,kind,inv){
   if(v==null||!isFinite(v)||!HEAT_HUE[kind]) return 'transparent';
   let t=hi===lo?1:Math.max(0,Math.min(1,(v-lo)/(hi-lo)));   // valor único na coluna: cor cheia (antes ficava sem cor)
@@ -864,7 +864,7 @@ const DAILY_COLS=[
   {key:'leads',label:'MSGs Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
   {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPAgd',type:'brl',heat:'cpmql',heatInv:true},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
-  {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
+  {key:'fat',label:'Fat.',type:'brl',heat:'fat'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
 const META_DAILY_COLS=DAILY_COLS;   // mesma tabela diária da Visão Geral
 function dailyCells(x,d,isTotal){

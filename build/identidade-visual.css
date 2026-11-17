@@ -17,7 +17,7 @@
   --chart-cpl:#1E1A12; --chart-cpmql:#C98A10;
   --bar-q:#1E9E63; --bar-noq:#BDB5A2;
   --heat-gasto:#D6453D; --heat-leads:#9A7330; --heat-mqls:#2A98AE; --heat-roas:#E0B400; --heat-vendas:#1E9E63;
-  --heat-cpl:#C9722F; --heat-cpmql:#8B5CF6; --heat-cac:#C2306A;
+  --heat-cpl:#C9722F; --heat-cpmql:#8B5CF6; --heat-cac:#C2306A; --heat-fat:#4E9A5B;
   --step-mql-bg:#E4F3F6; --step-mql-bd:#2A98AE;
   --step-gasto-bg:#FBE9E7; --step-gasto-bd:#D6453D;
   --step-fat-bg:#E6F6EC; --step-fat-bd:#1E9E63;
@@ -42,7 +42,7 @@
   --chart-cpl:#F3EDE0; --chart-cpmql:#E89B3C;
   --bar-q:#3FB68B; --bar-noq:#5A5446;
   --heat-gasto:#E5534B; --heat-leads:#C9A55C; --heat-mqls:#5BB5C9; --heat-roas:#FFD400; --heat-vendas:#3FB68B;
-  --heat-cpl:#E89B3C; --heat-cpmql:#A78BFA; --heat-cac:#F472B6;
+  --heat-cpl:#E89B3C; --heat-cpmql:#A78BFA; --heat-cac:#F472B6; --heat-fat:#6FBF73;
   --step-mql-bg:#10242A; --step-mql-bd:#5BB5C9;
   --step-gasto-bg:#321A18; --step-gasto-bd:#E5534B;
   --step-fat-bg:#12291F; --step-fat-bd:#3FB68B;
