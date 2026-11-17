@@ -67,13 +67,13 @@ function derive(a){
    buildAgg/daily/totals junto com fL/fM, acendendo funil, cards, colunas das
    tabelas e Top/Piores anúncios. Agendamentos/Reuniões Realizadas não têm fonte
    neste cliente — ficam null -> "-" até existir lista do comercial. */
-const VALOR_CONSULTA=800;   // toda consulta gera R$ 800 de faturamento; vendas de procedimento somam por cima
+const VALOR_CONSULTA=800;   // todo agendamento gera R$ 800 de faturamento; vendas de procedimento somam por cima
 function salesOf(a){
   const g=(a?a.sp:0)*taxf();
   const mqls=(a&&a.mqls)||0;
   const agendamentos=(a&&a.mqls)||0, reunioes=(a&&a.reunioes)||0;   // agendamentos = q do CRM; reunioes = CONSULTAS
   const vendas=(a&&a.vendas)||0, fatProc=(a&&a.fat)||0, receitaProc=(a&&a.receita)||0;
-  const fat=fatProc+reunioes*VALOR_CONSULTA, receita=receitaProc+reunioes*VALOR_CONSULTA;
+  const fat=fatProc+agendamentos*VALOR_CONSULTA, receita=receitaProc+agendamentos*VALOR_CONSULTA;
   const hasAg=agendamentos>0, hasRe=reunioes>0, hasVd=vendas>0, hasFat=fat>0;
   return {
     // MQL → Agendamento
