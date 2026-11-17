@@ -511,8 +511,7 @@ function funnelSteps(t,dv,crm){
     ['Conversas Totais', intf(t.msgs), [['CPL-T',brl(dv.cplt)],['Msg/Clique',pct(t.cl?t.msgs/t.cl:null)]]],
     ['Novas Conversas', crm?intf(t.leads):NA, [['CPL-N',crm?brl(dv.cpl):NA],['Novas/Totais',crm?pct(dv.prop):NA]], !crm],
     ['Agendamentos', crm?intf(t.mqls):NA, [['Tx‑Agend.',crm?pct(dv.tx):NA],['CPA',crm?brl(dv.cpmql):NA]], !crm, 'hl-mql'],
-    ['Consultas', crm&&s.reunioes!=null?intf(s.reunioes):NA, [['Agend→Consulta',crm&&s.reunioes!=null?pct(s.reunioes/t.mqls):NA],['Custo/Consulta',crm&&s.cprr!=null?brl(s.cprr):NA]], !crm||s.reunioes==null],
-    ['Vendas', crm&&s.vendas!=null?intf(s.vendas):NA, [['Consulta→Venda',crm&&s.txvenda!=null?pct(s.txvenda):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
+    ['Vendas', crm&&s.vendas!=null?intf(s.vendas):NA, [['Agend→Venda',crm&&s.vendas!=null&&t.mqls?pct(s.vendas/t.mqls):NA],['CAC',crm&&s.cac!=null?brl(s.cac):NA]], !crm||s.vendas==null],
     ['Faturamento', crm&&s.fat!=null?brl(s.fat):NA, [['ROAS',crm&&s.roas!=null?numf(s.roas):NA],['Ticket',crm&&s.tm!=null?brl(s.tm):NA]], !crm||s.fat==null, 'hl-fat'],
   ];
 }
@@ -550,7 +549,6 @@ function renderGeralCore(ids){
     {label:'CPC (link)',val:brl(dv.cpc),aux:intf(t.cl)+' cliques'},
     {label:'Anúncios ativos',val:intf(nAdsAtivos),aux:intf(nCampAtivas)+' campanhas c/ gasto'},
     {label:'Novas → Agendamento',val:pct(dv.tx),aux:'Tx de agendamento'},
-    {label:'Agendamentos → Consulta',val:pct(t.mqls?(t.reunioes||0)/t.mqls:null),aux:intf(t.reunioes||0)+' consultas'},
   ];
   document.getElementById(ids.kpis2).innerHTML=k2.map(kpiCard).join('');
   comboChart(ids.combo, daily(fL,fM,fS));
@@ -863,11 +861,10 @@ const DAILY_COLS=[
   {key:'msgs',label:'Conv. Totais',type:'int',heat:'leads'},{key:'cplt',label:'CPL-T',type:'brl',heat:'cpl',heatInv:true},
   {key:'leads',label:'Novas',type:'int'},{key:'cpl',label:'CPL-N',type:'brl'},{key:'prop',label:'Novas/Tot.',type:'pct'},
   {key:'mqls',label:'Agend.',type:'int',heat:'mqls'},{key:'tx',label:'Tx Agend.',type:'pct'},{key:'cpmql',label:'CPA',type:'brl',heat:'cpmql',heatInv:true},
-  {key:'reunioes',label:'Consultas',type:'int'},
   {key:'vendas',label:'Vendas',type:'int',heat:'vendas'},{key:'cac',label:'CAC',type:'brl',heat:'cac',heatInv:true},
   {key:'fat',label:'Fat.',type:'brl'},{key:'roas',label:'ROAS',type:'num',heat:'roas'},
 ];
-const META_DAILY_COLS=DAILY_COLS.filter(c=>!['vendas','cac','fat','roas','reunioes','prop'].includes(c.key));   // tabela estreita: sem vendas/consultas/proporção
+const META_DAILY_COLS=DAILY_COLS.filter(c=>!['vendas','cac','fat','roas','prop'].includes(c.key));   // tabela estreita: sem vendas/consultas/proporção
 function dailyCells(x,d,isTotal){
   const s=salesOf(x);
   return {date:isTotal?null:x.d, wd:isTotal?'':weekday(x.d), gasto:d.gasto, cpm:d.cpm, ctr:d.ctr, cl:x.cl,
@@ -914,10 +911,10 @@ function selDim(dim,key,ctrl){
 function renderMeta(){
   const F=metaScope(null), fM=F.fM;   // tabelas/gráficos por campanha·conjunto·anúncio = 100% Meta Ads
   const crmOn=!(STATE.mSelC.size||STATE.mSelA.size||STATE.mSelAd.size);   // CRM não tem campanha/anúncio
-  const fL=crmOn?leadsActive():[], fS=crmOn?salesActive():[];
+  const fL=crmOn?leadsActive().filter(l=>l.o):[], fS=crmOn?salesActive():[];
   const t=totals(fL,fM,fS), dv=derive(t), g=dv.gasto;
   document.getElementById('metaFunnel').innerHTML=funnelHTML(funnelSteps(t,dv,crmOn));
-  const mn=document.getElementById('metaNote'); if(mn) mn.textContent=crmOn?'Mesmo funil da Visão Geral. Conversas Totais = Meta Ads (Messaging Conversations Started); Novas Conversas (contatos únicos), Agendamentos e Consultas = CRM/planilha. Tabelas por campanha/conjunto/anúncio usam só a aba Meta Ads.':'Filtro de campanha/conjunto/anúncio ativo: o CRM não traz campanha/anúncio, então Novas Conversas, Agendamentos e Consultas ficam ocultos. Limpe o filtro para vê-los.';
+  const mn=document.getElementById('metaNote'); if(mn) mn.textContent=crmOn?'Mesmo funil da Visão Geral. Conversas Totais = Meta Ads (Messaging Conversations Started); Novas Conversas (contatos únicos) e Agendamentos = só leads do tráfego pago (mensagem padrão do anúncio) na planilha. Tabelas por campanha/conjunto/anúncio usam só a aba Meta Ads.':'Filtro de campanha/conjunto/anúncio ativo: o CRM não traz campanha/anúncio, então Novas Conversas e Agendamentos ficam ocultos. Limpe o filtro para vê-los.';
   comboChart('mCombo', daily(fL,fM,fS));
   // Conversas e gasto por anúncio (Top 10) — só Meta Ads
   const adAggM=buildAgg(fL,fM,fS,'ad');
@@ -981,13 +978,12 @@ function renderMeta(){
 const escA=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function renderAgenda(){
   const fL=leadsActive().filter(l=>l.q).sort((a,b)=>(a.d<b.d?1:a.d>b.d?-1:0));
-  const nC=fL.filter(l=>l.c).length;
-  document.getElementById('agCount').textContent=fL.length+' agendamentos · '+nC+' consultas';
+  document.getElementById('agCount').textContent=fL.length+' agendamentos · '+fL.filter(l=>l.o).length+' do tráfego pago';
   renderTable({id:'tAgenda', center:true,
     cols:[{key:'d',label:'Data',type:'date'},{key:'agd',label:'Agendado em',type:'date'},{key:'nm',label:'Nome',type:'dim',big:true},
       {key:'ph',label:'Telefone',type:'dim',w:110},{key:'bucket',label:'Etapa no CRM',type:'dim',big:true},
-      {key:'cons',label:'Consulta',type:'dim',w:90},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
-    rows:fL.map((l,i)=>({k:'a'+i, cells:{d:l.d,agd:l.agd||null,nm:l.nm,ph:l.ph,bucket:l.bucket,cons:l.c?'✔ Sim':'—',
+      {key:'org',label:'Origem',type:'dim',w:130},{key:'lk',label:'Abrir conversa',type:'html',w:130}],
+    rows:fL.map((l,i)=>({k:'a'+i, cells:{d:l.d,agd:l.agd||null,nm:l.nm,ph:l.ph,bucket:l.bucket,org:l.o?'Tráfego Pago':'Não identificado',
       lk:l.lk?`<a class="crm-link" href="${escA(l.lk)}" target="_blank" rel="noopener noreferrer">Abrir no CRM ↗</a>`:'—'}}))});
 }
 
