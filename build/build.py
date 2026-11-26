@@ -46,7 +46,7 @@ SPREADSHEET_ID = "1EcPFdCtd75HNN8xz4B7UU2KjSSkEYW4MkQRYgQArnRk"
 GID_META = "316997495"        # Meta Ads
 GID_CONVERSAS = "718101807"   # Conversas Iniciadas (CRM Kommo) = Leads
 GID_AGEND = "439827908"       # Agendamentos
-GID_SALES = None              # FUTURA aba de Vendas — preencher o gid quando existir
+GID_SALES = 510373601         # aba "Compras" (Data · Faturamento · Receita)
 EXPORT_URL = "https://docs.google.com/spreadsheets/d/{sid}/export?format=csv&gid={gid}"
 
 CLIENT_NAME = "Dr. Thiago Virgili"
